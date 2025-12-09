@@ -13,7 +13,7 @@ add_library(
 
 target_include_directories(
     racshell PUBLIC
-    rachsell
+    racshell
     externals/argparse/
     externals/nlohmann/
 )
