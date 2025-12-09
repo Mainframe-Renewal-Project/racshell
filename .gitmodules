@@ -1,0 +1,3 @@
+[submodule "sear"]
+	path = sear
+	url = https://github.com/Mainframe-Renewal-Project/sear
