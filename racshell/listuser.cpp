@@ -17,6 +17,12 @@ int main(int argc, char *argv[]) {
     program.add_argument("-t", "--tso")
     .help("List TSO segment");
 
+    program.add_argument("-k", "--kerberos")
+    .help("List kerberos segment");
+
+    program.add_argument("-c", "--cics")
+    .help("List CICS segment");
+
     try {
         program.parse_args(argc, argv);
     }
