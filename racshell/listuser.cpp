@@ -12,16 +12,16 @@ int main(int argc, char *argv[]) {
 
     // Optional parameters for data not displayed by default
     program.add_argument("-g", "--groups")
-    .help("List connected RACF groups");
+    .help("list connected RACF groups");
 
     program.add_argument("-t", "--tso")
-    .help("List TSO segment");
+    .help("list TSO segment");
 
     program.add_argument("-k", "--kerberos")
-    .help("List kerberos segment");
+    .help("list kerberos segment");
 
     program.add_argument("-c", "--cics")
-    .help("List CICS segment");
+    .help("list CICS segment");
 
     try {
         program.parse_args(argc, argv);
