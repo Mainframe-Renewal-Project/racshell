@@ -23,9 +23,9 @@ int main(int argc, char *argv[]) {
     if (input.length() > 8) {
         std::cout << std::string("\u001b[31mRACSHELL Error\x1b[0m: Invalid input, must be a valid RACF userid \n");
     } else {
-        std::cout << std::string("---------------------------------------------------------RACSHELL---\n");
+        std::cout << std::string("\033[35m---------------------------------------------------------\033[37mRACSHELL\033[35m---\x1b[0m\n");
         std::cout << std::string("Listuser: ") << input << std::string("\n");
-        std::cout << std::string("--------------------------------------------------------------------\n");
+        std::cout << std::string("\033[35m--------------------------------------------------------------------\x1b[0m\n");
     }
 
     return 0;
