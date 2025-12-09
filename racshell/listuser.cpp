@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     if (input.length() > 8) {
         std::cout << std::string("\u001b[31mRACSHELL Error\x1b[0m: Invalid input, must be a valid RACF userid \n");
     } else {
-        std::cout << std::string("--------------------------------------------------------------------");
+        std::cout << std::string("---------------------------------------------------------RACSHELL---");
         std::cout << std::string("Listuser: ") << input;
         std::cout << std::string("--------------------------------------------------------------------");
     }
