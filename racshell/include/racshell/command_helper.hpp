@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cctype>
 #include <string_view>
+#include <utility>
 
 #include "sear/sear.h"
 
@@ -601,15 +602,15 @@ namespace racshell
             return false;
         }
 
-        const SearResponseInfo info = validate_sear_response(result_json.c_str(), entity_type);
+        SearResponseInfo info = validate_sear_response(result_json.c_str(), entity_type);
         if (!info.success)
         {
             error_message = info.error_message;
             return false;
         }
 
-        profile = info.profile;
-        base = info.base;
+        profile = std::move(info.profile);
+        base = std::move(info.base);
         return true;
     }
 

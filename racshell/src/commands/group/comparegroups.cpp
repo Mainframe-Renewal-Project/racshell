@@ -5,6 +5,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "include/racshell/command_helper.hpp"
@@ -46,20 +47,20 @@ namespace
             throw std::runtime_error(error_message);
         }
 
-        comparison.left.raw_response_json = payload.left_raw_response_json;
-        comparison.right.raw_response_json = payload.right_raw_response_json;
-        comparison.left.response_json = payload.left_response_json;
-        comparison.right.response_json = payload.right_response_json;
+        comparison.left.raw_response_json = std::move(payload.left_raw_response_json);
+        comparison.right.raw_response_json = std::move(payload.right_raw_response_json);
+        comparison.left.response_json = std::move(payload.left_response_json);
+        comparison.right.response_json = std::move(payload.right_response_json);
 
         if (raw_json_output)
         {
             return comparison;
         }
 
-        comparison.left.profile = payload.left_profile;
-        comparison.left.base = payload.left_base;
-        comparison.right.profile = payload.right_profile;
-        comparison.right.base = payload.right_base;
+        comparison.left.profile = std::move(payload.left_profile);
+        comparison.left.base = std::move(payload.left_base);
+        comparison.right.profile = std::move(payload.right_profile);
+        comparison.right.base = std::move(payload.right_base);
 
         const nlohmann::json &left_profile = comparison.left.profile;
         const nlohmann::json &left_base = comparison.left.base;
