@@ -4,6 +4,20 @@ cmake_minimum_required(VERSION 3.24)
 project(racshell C CXX)
 
 set(CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+if(NOT ipo_supported)
+    message(STATUS "IPO/LTO not supported: ${ipo_error}")
+endif()
 
 add_subdirectory(sear)
 
