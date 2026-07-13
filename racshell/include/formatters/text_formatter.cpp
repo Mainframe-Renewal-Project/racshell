@@ -361,11 +361,11 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
         if (it.key() == "groups")
         {
             const nlohmann::json &groups = it.value();
-            if (groups.contains("only_in_left"))
+            if (groups.contains("only_in_left") && groups["only_in_left"].is_array() && !groups["only_in_left"].empty())
             {
                 print_group_list(ss, "  Groups only in " + comparison.left.userid + ":", groups["only_in_left"]);
             }
-            if (groups.contains("only_in_right"))
+            if (groups.contains("only_in_right") && groups["only_in_right"].is_array() && !groups["only_in_right"].empty())
             {
                 print_group_list(ss, "  Groups only in " + comparison.right.userid + ":", groups["only_in_right"]);
             }
