@@ -62,6 +62,9 @@ target_link_libraries(resume racshell -static)
 add_executable(revoke "racshell/src/commands/user/revoke.cpp")
 target_link_libraries(revoke racshell -static)
 
+add_executable(resetpassword "racshell/src/commands/user/resetpassword.cpp")
+target_link_libraries(resetpassword racshell -static)
+
 # Group commands
 add_executable(addgroup "racshell/src/commands/group/addgroup.cpp")
 target_link_libraries(addgroup racshell -static)
@@ -139,6 +142,7 @@ add_custom_target(
     compareusers
     resume
     revoke
+    resetpassword
     listgroup
     searchgroups
     comparegroups
