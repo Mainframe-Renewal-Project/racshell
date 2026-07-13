@@ -93,9 +93,15 @@ namespace
                                  const nlohmann::json &difference,
                                  const std::string &label)
     {
-        ss << "  " << label << ": "
-           << left_groupid << "='" << racshell::value_to_text(difference.contains("left") ? difference["left"] : nlohmann::json())
-           << "', " << right_groupid << "='" << racshell::value_to_text(difference.contains("right") ? difference["right"] : nlohmann::json()) << "'\n";
+        ss << "  ";
+        racshell::colorize(ss, racshell::terminal_color::yellow) << label;
+        racshell::reset_color(ss) << ": ";
+
+        racshell::colorize(ss, racshell::terminal_color::red) << left_groupid;
+        racshell::reset_color(ss) << "='" << racshell::value_to_text(difference.contains("left") ? difference["left"] : nlohmann::json()) << "', ";
+
+        racshell::colorize(ss, racshell::terminal_color::green) << right_groupid;
+        racshell::reset_color(ss) << "='" << racshell::value_to_text(difference.contains("right") ? difference["right"] : nlohmann::json()) << "'\n";
     }
 
 } // namespace
@@ -290,7 +296,9 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
         return ss.str();
     }
 
-    ss << "Comparing groups " << comparison.left.groupid << " and " << comparison.right.groupid << ":\n";
+    racshell::print_colored_text(ss,
+                                 racshell::terminal_color::blue,
+                                 "Comparing groups " + comparison.left.groupid + " and " + comparison.right.groupid + ":\n");
     for (auto it = comparison.differences.begin(); it != comparison.differences.end(); ++it)
     {
         if (it.key() == "connected_users")
@@ -298,20 +306,34 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             const nlohmann::json &users = it.value();
             if (users.contains("only_in_left"))
             {
-                print_user_list(ss, "  Users only in " + comparison.left.groupid + ":", users["only_in_left"]);
+                racshell::colorize(ss, racshell::terminal_color::red) << "  Users only in " << comparison.left.groupid << ":\n";
+                racshell::reset_color(ss);
+                for (const auto &user : users["only_in_left"])
+                {
+                    ss << "    " << user.value("userid", "")
+                       << " (" << user.value("authority", "") << ")\n";
+                }
             }
             if (users.contains("only_in_right"))
             {
-                print_user_list(ss, "  Users only in " + comparison.right.groupid + ":", users["only_in_right"]);
+                racshell::colorize(ss, racshell::terminal_color::green) << "  Users only in " << comparison.right.groupid << ":\n";
+                racshell::reset_color(ss);
+                for (const auto &user : users["only_in_right"])
+                {
+                    ss << "    " << user.value("userid", "")
+                       << " (" << user.value("authority", "") << ")\n";
+                }
             }
             if (users.contains("authority_mismatches"))
             {
-                ss << "  User authority differences\n";
+                racshell::print_colored_text(ss, racshell::terminal_color::yellow, "  User authority differences\n");
                 for (const auto &mismatch : users["authority_mismatches"])
                 {
-                    ss << "    " << mismatch.value("userid", "")
-                       << ": " << comparison.left.groupid << "='" << mismatch.value("left", "")
-                       << "', " << comparison.right.groupid << "='" << mismatch.value("right", "") << "'\n";
+                    ss << "    " << mismatch.value("userid", "") << ": ";
+                    racshell::colorize(ss, racshell::terminal_color::red) << comparison.left.groupid;
+                    racshell::reset_color(ss) << "='" << mismatch.value("left", "") << "', ";
+                    racshell::colorize(ss, racshell::terminal_color::green) << comparison.right.groupid;
+                    racshell::reset_color(ss) << "='" << mismatch.value("right", "") << "'\n";
                 }
             }
             continue;
@@ -355,7 +377,9 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
         return ss.str();
     }
 
-    ss << "Comparing users " << comparison.left.userid << " and " << comparison.right.userid << ":\n";
+    racshell::print_colored_text(ss,
+                                 racshell::terminal_color::blue,
+                                 "Comparing users " + comparison.left.userid + " and " + comparison.right.userid + ":\n");
     for (auto it = comparison.differences.begin(); it != comparison.differences.end(); ++it)
     {
         if (it.key() == "groups")
@@ -363,11 +387,21 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             const nlohmann::json &groups = it.value();
             if (groups.contains("only_in_left") && groups["only_in_left"].is_array() && !groups["only_in_left"].empty())
             {
-                print_group_list(ss, "  Groups only in " + comparison.left.userid + ":", groups["only_in_left"]);
+                racshell::colorize(ss, racshell::terminal_color::red) << "  Groups only in " << comparison.left.userid << ":\n";
+                racshell::reset_color(ss);
+                for (const auto &group : groups["only_in_left"])
+                {
+                    ss << "    " << racshell::value_to_text(group) << "\n";
+                }
             }
             if (groups.contains("only_in_right") && groups["only_in_right"].is_array() && !groups["only_in_right"].empty())
             {
-                print_group_list(ss, "  Groups only in " + comparison.right.userid + ":", groups["only_in_right"]);
+                racshell::colorize(ss, racshell::terminal_color::green) << "  Groups only in " << comparison.right.userid << ":\n";
+                racshell::reset_color(ss);
+                for (const auto &group : groups["only_in_right"])
+                {
+                    ss << "    " << racshell::value_to_text(group) << "\n";
+                }
             }
             continue;
         }
