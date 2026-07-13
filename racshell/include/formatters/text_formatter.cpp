@@ -94,13 +94,13 @@ namespace
                                  const std::string &label)
     {
         ss << "  ";
-        racshell::colorize(ss, racshell::terminal_color::yellow) << label;
+        racshell::colorize(ss, racshell::terminal_color::blue) << label;
         racshell::reset_color(ss) << ": ";
 
-        racshell::colorize(ss, racshell::terminal_color::red) << left_groupid;
+        racshell::colorize(ss, racshell::terminal_color::magenta) << left_groupid;
         racshell::reset_color(ss) << "='" << racshell::value_to_text(difference.contains("left") ? difference["left"] : nlohmann::json()) << "', ";
 
-        racshell::colorize(ss, racshell::terminal_color::green) << right_groupid;
+        racshell::colorize(ss, racshell::terminal_color::cyan) << right_groupid;
         racshell::reset_color(ss) << "='" << racshell::value_to_text(difference.contains("right") ? difference["right"] : nlohmann::json()) << "'\n";
     }
 
@@ -306,7 +306,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             const nlohmann::json &users = it.value();
             if (users.contains("only_in_left"))
             {
-                racshell::colorize(ss, racshell::terminal_color::red) << "  Users only in " << comparison.left.groupid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::magenta) << "  Users only in " << comparison.left.groupid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &user : users["only_in_left"])
                 {
@@ -316,7 +316,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             }
             if (users.contains("only_in_right"))
             {
-                racshell::colorize(ss, racshell::terminal_color::green) << "  Users only in " << comparison.right.groupid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::cyan) << "  Users only in " << comparison.right.groupid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &user : users["only_in_right"])
                 {
@@ -326,13 +326,13 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             }
             if (users.contains("authority_mismatches"))
             {
-                racshell::print_colored_text(ss, racshell::terminal_color::yellow, "  User authority differences\n");
+                racshell::print_colored_text(ss, racshell::terminal_color::blue, "  User authority differences\n");
                 for (const auto &mismatch : users["authority_mismatches"])
                 {
                     ss << "    " << mismatch.value("userid", "") << ": ";
-                    racshell::colorize(ss, racshell::terminal_color::red) << comparison.left.groupid;
+                    racshell::colorize(ss, racshell::terminal_color::magenta) << comparison.left.groupid;
                     racshell::reset_color(ss) << "='" << mismatch.value("left", "") << "', ";
-                    racshell::colorize(ss, racshell::terminal_color::green) << comparison.right.groupid;
+                    racshell::colorize(ss, racshell::terminal_color::cyan) << comparison.right.groupid;
                     racshell::reset_color(ss) << "='" << mismatch.value("right", "") << "'\n";
                 }
             }
@@ -387,7 +387,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             const nlohmann::json &groups = it.value();
             if (groups.contains("only_in_left") && groups["only_in_left"].is_array() && !groups["only_in_left"].empty())
             {
-                racshell::colorize(ss, racshell::terminal_color::red) << "  Groups only in " << comparison.left.userid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::magenta) << "  Groups only in " << comparison.left.userid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &group : groups["only_in_left"])
                 {
@@ -396,7 +396,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             }
             if (groups.contains("only_in_right") && groups["only_in_right"].is_array() && !groups["only_in_right"].empty())
             {
-                racshell::colorize(ss, racshell::terminal_color::green) << "  Groups only in " << comparison.right.userid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::cyan) << "  Groups only in " << comparison.right.userid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &group : groups["only_in_right"])
                 {
