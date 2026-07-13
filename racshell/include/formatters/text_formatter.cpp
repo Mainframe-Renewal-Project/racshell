@@ -407,7 +407,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
         const nlohmann::json &difference = comparison.differences[key];
         if (key == "groups")
         {
-            racshell::colorize(ss, racshell::terminal_color::gray) << key;
+            racshell::colorize(ss, racshell::terminal_color::gray) << "  " << key;
             racshell::reset_color(ss) << ": \n";
             const nlohmann::json &groups = difference;
             if (groups.contains("only_in_left") && groups["only_in_left"].is_array() && !groups["only_in_left"].empty())
