@@ -56,6 +56,9 @@ target_link_libraries(searchusers racshell -static)
 add_executable(compareusers "racshell/src/commands/user/compareusers.cpp")
 target_link_libraries(compareusers racshell -static)
 
+add_executable(resume "racshell/src/commands/user/resume.cpp")
+target_link_libraries(resume racshell -static)
+
 # Group commands
 add_executable(addgroup "racshell/src/commands/group/addgroup.cpp")
 target_link_libraries(addgroup racshell -static)
@@ -131,6 +134,7 @@ add_custom_target(
     listuser
     searchusers
     compareusers
+    resume
     listgroup
     searchgroups
     comparegroups
