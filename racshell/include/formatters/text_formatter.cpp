@@ -1,5 +1,7 @@
 #include "racshell/output_formatter.hpp"
 #include "include/racshell/command_helper.hpp"
+#include <algorithm>
+#include <array>
 #include <cctype>
 #include <sstream>
 
@@ -380,11 +382,32 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
     racshell::print_colored_text(ss,
                                  racshell::terminal_color::gray,
                                  "Comparing users " + comparison.left.userid + " and " + comparison.right.userid + ":\n");
-    for (auto it = comparison.differences.begin(); it != comparison.differences.end(); ++it)
+
+    const std::array<const char *, 12> preferred_order = {
+        "name",
+        "owner",
+        "default_group",
+        "created_date",
+        "revoked",
+        "security",
+        "tso",
+        "kerberos",
+        "cics",
+        "groups",
+        "omvs",
+        "csdata"};
+
+    const auto append_difference_by_key = [&](const std::string &key)
     {
-        if (it.key() == "groups")
+        if (!comparison.differences.contains(key))
         {
-            const nlohmann::json &groups = it.value();
+            return;
+        }
+
+        const nlohmann::json &difference = comparison.differences[key];
+        if (key == "groups")
+        {
+            const nlohmann::json &groups = difference;
             if (groups.contains("only_in_left") && groups["only_in_left"].is_array() && !groups["only_in_left"].empty())
             {
                 racshell::colorize(ss, racshell::terminal_color::magenta) << "  Groups only in " << comparison.left.userid << ":\n";
@@ -403,14 +426,29 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
                     ss << "    " << racshell::value_to_text(group) << "\n";
                 }
             }
-            continue;
+            return;
         }
 
         append_comparison_value(ss,
                                 comparison.left.userid,
                                 comparison.right.userid,
-                                it.value(),
-                                it.key());
+                                difference,
+                                key);
+    };
+
+    for (const char *key : preferred_order)
+    {
+        append_difference_by_key(key);
+    }
+
+    for (auto it = comparison.differences.begin(); it != comparison.differences.end(); ++it)
+    {
+        if (std::find(preferred_order.begin(), preferred_order.end(), it.key()) != preferred_order.end())
+        {
+            continue;
+        }
+
+        append_difference_by_key(it.key());
     }
 
     return ss.str();
