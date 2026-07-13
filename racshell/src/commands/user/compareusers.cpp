@@ -13,6 +13,14 @@
 
 namespace
 {
+    /**
+     * @brief Extract connected RACF group IDs from a user's base section.
+     *
+     * The returned list is sorted and deduplicated to produce stable comparison output.
+     *
+     * @param base User base JSON object.
+     * @return Vector of normalized group IDs.
+     */
     std::vector<std::string> extract_groups(const nlohmann::json &base)
     {
         std::vector<std::string> groups;
@@ -40,6 +48,16 @@ namespace
         return groups;
     }
 
+    /**
+     * @brief Build a reduced security snapshot for user-to-user comparison.
+     *
+     * Security attributes are sourced from base data, with MFA sourced from profile
+     * when present.
+     *
+     * @param base User base JSON object.
+     * @param profile User profile JSON object.
+     * @return JSON object containing only security-relevant keys.
+     */
     nlohmann::json build_security_snapshot(const nlohmann::json &base, const nlohmann::json &profile)
     {
         nlohmann::json security = nlohmann::json::object();
@@ -79,6 +97,26 @@ namespace
         return security;
     }
 
+    /**
+     * @brief Load both users and compute selected differences.
+     *
+     * When raw JSON output is requested, this returns early with raw responses and
+     * skips parsed segment comparisons.
+     *
+     * @param left_userid Left RACF user ID.
+     * @param right_userid Right RACF user ID.
+     * @param compare_groups Include connected-group comparison.
+     * @param compare_security Include security-attribute comparison.
+     * @param compare_tso Include TSO segment comparison.
+     * @param compare_kerberos Include Kerberos segment comparison.
+     * @param compare_cics Include CICS segment comparison.
+     * @param compare_omvs Include OMVS segment comparison.
+     * @param compare_csdata Include CSDATA segment comparison.
+     * @param debug Enable debug request/response flow.
+     * @param raw_json_output Return raw SEAR JSON without formatted comparisons.
+     * @return Populated user comparison model.
+     * @throws std::runtime_error If extract loading fails.
+     */
     UserComparisonData build_user_comparison_data(const std::string &left_userid,
                                                   const std::string &right_userid,
                                                   bool compare_groups,
@@ -137,6 +175,7 @@ namespace
         const nlohmann::json &right_profile = comparison.right.profile;
         const nlohmann::json &right_base = comparison.right.base;
 
+        // Always compare these core identity attributes.
         racshell::add_difference(comparison.differences, "name",
                                  racshell::get_object_value(left_base, "base:name"),
                                  racshell::get_object_value(right_base, "base:name"));
@@ -204,6 +243,16 @@ namespace
 
 } // namespace
 
+/**
+ * @brief Entry point for the compareusers command.
+ *
+ * Parses arguments, validates user IDs, computes requested comparisons, and prints
+ * either JSON or text output.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, 1 on parse/validation/runtime errors.
+ */
 int main(int argc, char *argv[])
 {
     argparse::ArgumentParser program("compareusers");
@@ -214,7 +263,7 @@ int main(int argc, char *argv[])
     program.add_argument("right-user")
         .help("second RACF user to compare");
 
-    racshell::add_toggle_argument(program, "-u", "--groups", "compare groups");
+    racshell::add_toggle_argument(program, "-g", "--groups", "compare groups");
     racshell::add_toggle_argument(program, "-s", "--security", "compare security data");
     racshell::add_toggle_argument(program, "-t", "--tso", "compare TSO segment");
     racshell::add_toggle_argument(program, "-k", "--kerberos", "compare Kerberos segment");
@@ -241,6 +290,7 @@ int main(int argc, char *argv[])
 
     const std::string left_userid = program.get<std::string>("left-user");
     const std::string right_userid = program.get<std::string>("right-user");
+    // RACF user IDs are limited to 8 characters.
     if (left_userid.length() > 8 || right_userid.length() > 8)
     {
         racshell::print_error(std::cerr, "Invalid input, must be a valid RACF userid");
@@ -260,6 +310,7 @@ int main(int argc, char *argv[])
 
     try
     {
+        // Use all-json only for data retrieval shape; --json controls presentation format.
         const UserComparisonData comparison = build_user_comparison_data(left_userid,
                                                                          right_userid,
                                                                          compare_groups,
