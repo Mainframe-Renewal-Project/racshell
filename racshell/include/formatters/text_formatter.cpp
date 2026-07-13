@@ -94,7 +94,7 @@ namespace
                                  const std::string &label)
     {
         ss << "  ";
-        racshell::colorize(ss, racshell::terminal_color::blue) << label;
+        racshell::colorize(ss, racshell::terminal_color::gray) << label;
         racshell::reset_color(ss) << ": ";
 
         racshell::colorize(ss, racshell::terminal_color::magenta) << left_groupid;
@@ -289,7 +289,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
 
     if (comparison.identical)
     {
-        racshell::print_colored_text(ss, racshell::terminal_color::blue,
+        racshell::print_colored_text(ss, racshell::terminal_color::gray,
             "Groups " + comparison.left.groupid + 
             " and " + comparison.right.groupid +
             " are identical for compared fields.\n");
@@ -297,7 +297,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
     }
 
     racshell::print_colored_text(ss,
-                                 racshell::terminal_color::blue,
+                                 racshell::terminal_color::gray,
                                  "Comparing groups " + comparison.left.groupid + " and " + comparison.right.groupid + ":\n");
     for (auto it = comparison.differences.begin(); it != comparison.differences.end(); ++it)
     {
@@ -326,7 +326,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             }
             if (users.contains("authority_mismatches"))
             {
-                racshell::print_colored_text(ss, racshell::terminal_color::blue, "  User authority differences\n");
+                racshell::print_colored_text(ss, racshell::terminal_color::gray, "  User authority differences\n");
                 for (const auto &mismatch : users["authority_mismatches"])
                 {
                     ss << "    " << mismatch.value("userid", "") << ": ";
@@ -370,7 +370,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
 
     if (comparison.identical)
     {
-        racshell::print_colored_text(ss, racshell::terminal_color::blue,
+        racshell::print_colored_text(ss, racshell::terminal_color::gray,
             "Users " + comparison.left.userid + 
             " and " + comparison.right.userid +
             " are identical for compared fields.\n");
@@ -378,7 +378,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
     }
 
     racshell::print_colored_text(ss,
-                                 racshell::terminal_color::blue,
+                                 racshell::terminal_color::gray,
                                  "Comparing users " + comparison.left.userid + " and " + comparison.right.userid + ":\n");
     for (auto it = comparison.differences.begin(); it != comparison.differences.end(); ++it)
     {

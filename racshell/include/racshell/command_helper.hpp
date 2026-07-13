@@ -54,6 +54,11 @@ namespace racshell
          */
         inline constexpr std::string_view cyan = "\x1b[36m";
 
+        /**
+         * @brief ANSI bright black (gray) foreground sequence.
+         */
+        inline constexpr std::string_view gray = "\x1b[90m";
+
     } // namespace terminal_color
 
     /**
