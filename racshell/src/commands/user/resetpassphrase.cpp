@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 		{
 			request["traits"]["base:passphrase"] = program.get<std::string>("passphrase");
 		}};
+        // TODO: Remove any password that may have been set, like the NOPASSWORD command.
 
 	return racshell::run_entity_command(argc, argv, spec);
 }
