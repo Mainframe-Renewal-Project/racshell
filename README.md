@@ -16,6 +16,10 @@ The following commands are currently implemented in `racshell/`.
 | `listuser` | User | Display RACF user details | `--groups`, `--tso`, `--kerberos`, `--cics`, `--omvs`, `--security`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
 | `searchusers` | User | Search RACF users | `--filter`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `compareusers` | User | Compare two RACF users | `--json`, `--all-json`, `--debug`, `--no-color` |
+| `resume` | User | Resume a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `revoke` | User | Revoke a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `resetpassword` | User | Reset RACF user password | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `resetpassphrase` | User | Reset RACF user passphrase | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `addgroup` | Group | Create RACF group | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `altgroup` | Group | Alter RACF group | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deletegroup` | Group | Delete RACF group | `--json`, `--debug`, `--all-json`, `--no-color` |
@@ -142,6 +146,68 @@ Options:
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output differences as JSON
 - `-a, --all-json` output full raw SEAR JSON responses
+
+### resume
+
+Resume a RACF user.
+
+Usage:
+
+`resume <userid> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### revoke
+
+Revoke a RACF user.
+
+Usage:
+
+`revoke <userid> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### resetpassword
+
+Reset a RACF user's password.
+
+Usage:
+
+`resetpassword <userid> <password> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### resetpassphrase
+
+Reset a RACF user's passphrase.
+
+Usage:
+
+`resetpassphrase <userid> <passphrase> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+NOTE: this is not tested, and is lacking of NOPASSWORD to ensure the password is not kept
 
 ### Group Commands
 
