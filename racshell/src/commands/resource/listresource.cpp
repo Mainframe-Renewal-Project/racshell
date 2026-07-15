@@ -40,19 +40,22 @@ int main(int argc, char *argv[])
 
     racshell::set_color_output_enabled(!program.get<bool>("no-color"));
 
-    const std::string resource = program.get<std::string>("resource");
-    if (resource.empty() || resource.length() > 44)
+    const std::string display_resource = program.get<std::string>("resource");
+    if (display_resource.empty() || display_resource.length() > 44)
     {
         racshell::print_error(std::cerr, "Invalid input, resource profile name must not exceed 44 characters");
         return 1;
     }
 
-    const std::string resource_class = program.get<std::string>("class");
-    if (resource_class.empty() || resource_class.length() > 8)
+    const std::string display_resource_class = program.get<std::string>("class");
+    if (display_resource_class.empty() || display_resource_class.length() > 8)
     {
         racshell::print_error(std::cerr, "Invalid input, resource profile class must not exceed 8 characters");
         return 1;
     }
+
+    const std::string request_resource = racshell::to_racf_identifier_text(display_resource);
+    const std::string request_resource_class = racshell::to_racf_identifier_text(display_resource_class);
 
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
@@ -63,8 +66,8 @@ int main(int argc, char *argv[])
     nlohmann::json request = {
         {"operation", "extract"},
         {"admin_type", "resource"},
-        {"resource", resource},
-        {"class", resource_class}};
+        {"resource", request_resource},
+        {"class", request_resource_class}};
 
     const std::string request_json = request.dump();
     sear_result_t *result = sear(request_json.c_str(), request_json.length(), debug);
@@ -83,11 +86,12 @@ int main(int argc, char *argv[])
     }
 
     ResourceData resource_data;
-    resource_data.resource = resource;
-    resource_data.resource_class = resource_class;
+    resource_data.resource = display_resource;
+    resource_data.resource_class = display_resource_class;
     resource_data.base = sear_info.base;
     resource_data.profile = sear_info.profile;
     racshell::assign_string(sear_info.base, "base:owner", resource_data.owner);
+    resource_data.owner = racshell::from_racf_identifier_text(resource_data.owner);
     racshell::assign_string(sear_info.base, "base:universal_access", resource_data.uacc);
     
     if (csdata && sear_info.profile.contains("csdata") && sear_info.profile["csdata"].is_object())
@@ -106,7 +110,7 @@ int main(int argc, char *argv[])
             }
             if (entry.contains("access_id"))
             {
-                access_entry.access_id = entry["access_id"];
+                access_entry.access_id = racshell::from_racf_identifier_text(entry["access_id"]);
             }
             resource_data.access_list.push_back(access_entry);
         }

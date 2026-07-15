@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <string_view>
 #include <utility>
@@ -15,6 +16,67 @@
 
 namespace racshell
 {
+
+    namespace text_codec
+    {
+        inline std::string replace_all(std::string text,
+                                       std::string_view from,
+                                       std::string_view to)
+        {
+            if (from.empty())
+            {
+                return text;
+            }
+
+            std::string::size_type pos = 0;
+            while ((pos = text.find(from, pos)) != std::string::npos)
+            {
+                text.replace(pos, from.length(), to);
+                pos += to.length();
+            }
+            return text;
+        }
+    } // namespace text_codec
+
+    /**
+     * @brief Converts display text to RACF-friendly identifier characters.
+     * @param value Input value from CLI/UI.
+     * @return Converted value for RACF requests.
+     *
+     * This table intentionally starts small with verified mappings and can be
+     * extended as additional site-specific conversions are confirmed.
+     */
+    inline std::string to_racf_identifier_text(std::string value)
+    {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 2> mapping = {
+            std::pair<std::string_view, std::string_view>{"Ø", "@"},
+            std::pair<std::string_view, std::string_view>{"ø", "@"}};
+
+        for (const auto &entry : mapping)
+        {
+            value = text_codec::replace_all(std::move(value), entry.first, entry.second);
+        }
+
+        return value;
+    }
+
+    /**
+     * @brief Converts RACF identifier text back to display-friendly characters.
+     * @param value Input value from RACF responses.
+     * @return Converted value for human-readable output.
+     */
+    inline std::string from_racf_identifier_text(std::string value)
+    {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 1> mapping = {
+            std::pair<std::string_view, std::string_view>{"@", "Ø"}};
+
+        for (const auto &entry : mapping)
+        {
+            value = text_codec::replace_all(std::move(value), entry.first, entry.second);
+        }
+
+        return value;
+    }
 
     namespace terminal_color
     {

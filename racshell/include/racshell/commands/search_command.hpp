@@ -70,12 +70,14 @@ namespace racshell
 
         set_color_output_enabled(!program.get<bool>("no-color"));
 
-        const std::string filter = program.get<std::string>("filter");
-        if (filter.length() > spec.filter_max_length)
+        const std::string display_filter = program.get<std::string>("filter");
+        if (display_filter.length() > spec.filter_max_length)
         {
             print_error(std::cerr, spec.filter_validation_error);
             return 1;
         }
+
+        const std::string request_filter = to_racf_identifier_text(display_filter);
 
         std::string extra_error;
         if (spec.validate_extra_args && !spec.validate_extra_args(program, extra_error))
@@ -92,9 +94,9 @@ namespace racshell
             {"operation", "search"},
             {"admin_type", spec.admin_type}};
 
-        if (!filter.empty())
+        if (!request_filter.empty())
         {
-            request[spec.filter_key] = filter;
+            request[spec.filter_key] = request_filter;
         }
 
         if (spec.apply_extra_args)
@@ -133,7 +135,7 @@ namespace racshell
             {
                 if (profile.is_string())
                 {
-                    profiles.push_back(profile.get<std::string>());
+                    profiles.push_back(from_racf_identifier_text(profile.get<std::string>()));
                 }
             }
         }
@@ -157,14 +159,14 @@ namespace racshell
 
         if (spec.build_text_header)
         {
-            std::cout << spec.build_text_header(program, filter) << "\n";
+            std::cout << spec.build_text_header(program, display_filter) << "\n";
         }
         else
         {
             std::cout << spec.results_label;
-            if (!filter.empty())
+            if (!display_filter.empty())
             {
-                std::cout << " matching '" << filter << "'";
+                std::cout << " matching '" << display_filter << "'";
             }
             std::cout << ":\n";
         }
