@@ -73,6 +73,9 @@ namespace racshell
             return 1;
         }
 
+        const std::string request_userid = to_racf_identifier_text(userid);
+        const std::string request_group = to_racf_identifier_text(group);
+
         const bool debug = program.get<bool>("debug");
         const bool json_output = program.get<bool>("json");
         const bool all_json = program.get<bool>("all-json");
@@ -80,8 +83,8 @@ namespace racshell
         nlohmann::json request = {
             {"operation", spec.operation},
             {"admin_type", "group-connection"},
-            {"userid", userid},
-            {"group", group}};
+            {"userid", request_userid},
+            {"group", request_group}};
 
         if (spec.with_traits)
         {

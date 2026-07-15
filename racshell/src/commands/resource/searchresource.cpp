@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
         },
         .apply_extra_args = [](const argparse::ArgumentParser &program, nlohmann::json &request)
         {
-            request["class"] = program.get<std::string>("class");
+            request["class"] = racshell::to_racf_identifier_text(program.get<std::string>("class"));
         },
         .build_text_header = [](const argparse::ArgumentParser &program, const std::string &filter)
         {

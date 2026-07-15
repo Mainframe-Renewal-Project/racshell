@@ -82,11 +82,13 @@ namespace racshell
         const bool json_output = program.get<bool>("json");
         const bool all_json = program.get<bool>("all-json");
 
+        const std::string userid = program.get<std::string>("userid");
+        const std::string request_userid = to_racf_identifier_text(userid);
+
         nlohmann::json request = {
             {"operation", spec.operation},
             {"admin_type", "permission"},
-            {"userid",
-             program.get<std::string>("userid")}};
+            {"userid", request_userid}};
 
         if (spec.is_dataset)
         {
@@ -98,7 +100,7 @@ namespace racshell
                 return 1;
             }
 
-            request["dataset"] = dataset;
+            request["dataset"] = to_racf_identifier_text(dataset);
 
             if (program.get<bool>("generic"))
             {
@@ -114,10 +116,10 @@ namespace racshell
         else
         {
             request["resource"] =
-                program.get<std::string>("resource");
+                to_racf_identifier_text(program.get<std::string>("resource"));
 
             request["class"] =
-                program.get<std::string>("class");
+                to_racf_identifier_text(program.get<std::string>("class"));
         }
 
         if (spec.allow_traits)
@@ -160,8 +162,7 @@ namespace racshell
         if (json_output)
         {
             nlohmann::json output;
-            output["userid"] =
-                request["userid"];
+            output["userid"] = userid;
 
             output["status"] =
                 spec.success_verb;
@@ -174,7 +175,7 @@ namespace racshell
 
             std::cout
                 << "Permit for "
-                << request["userid"]
+                << userid
                 << " "
                 << spec.success_verb
                 << " successfully.\n";

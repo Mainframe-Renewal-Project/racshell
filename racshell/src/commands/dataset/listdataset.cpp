@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
         racshell::print_error(std::cerr, "Invalid input, dataset profile name must not exceed 44 characters");
         return 1;
     }
+    const std::string request_dataset = racshell::to_racf_identifier_text(dataset);
 
     const bool generic = program.get<bool>("generic");
     const bool debug = program.get<bool>("debug");
@@ -51,7 +52,7 @@ int main(int argc, char *argv[])
     nlohmann::json request = {
         {"operation", "extract"},
         {"admin_type", "dataset"},
-        {"dataset", dataset}};
+        {"dataset", request_dataset}};
 
     if (generic)
     {

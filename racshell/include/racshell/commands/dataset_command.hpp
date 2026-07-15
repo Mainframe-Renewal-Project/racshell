@@ -80,6 +80,8 @@ inline int run_dataset_command(
         return 1;
     }
 
+    const std::string request_dataset = to_racf_identifier_text(dataset);
+
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
     const bool all_json = program.get<bool>("all-json");
@@ -88,7 +90,7 @@ inline int run_dataset_command(
     nlohmann::json request = {
         {"operation", spec.operation},
         {"admin_type", "dataset"},
-        {"dataset", dataset}
+        {"dataset", request_dataset}
     };
 
 

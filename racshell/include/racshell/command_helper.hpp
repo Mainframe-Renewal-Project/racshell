@@ -647,10 +647,11 @@ namespace racshell
                                                const std::string &entity_id,
                                                bool debug)
     {
+        const std::string request_entity_id = to_racf_identifier_text(entity_id);
         const nlohmann::json request = {
             {"operation", "extract"},
             {"admin_type", admin_type},
-            {id_key, entity_id}};
+            {id_key, request_entity_id}};
 
         const std::string request_json = request.dump();
         sear_result_t *result = sear(request_json.c_str(), request_json.length(), debug);

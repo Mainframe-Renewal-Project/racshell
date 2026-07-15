@@ -71,6 +71,9 @@ namespace racshell
             return 1;
         }
 
+        const std::string request_resource = to_racf_identifier_text(resource);
+        const std::string request_resource_class = to_racf_identifier_text(resource_class);
+
         const bool debug = program.get<bool>("debug");
         const bool json_output = program.get<bool>("json");
         const bool all_json = program.get<bool>("all-json");
@@ -87,8 +90,8 @@ namespace racshell
         nlohmann::json request = {
             {"operation", spec.operation},
             {"admin_type", "resource"},
-            {"resource", resource},
-            {"class", resource_class}};
+            {"resource", request_resource},
+            {"class", request_resource_class}};
 
         if (spec.allow_traits)
         {

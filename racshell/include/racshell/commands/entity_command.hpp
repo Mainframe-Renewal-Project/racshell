@@ -69,12 +69,13 @@ namespace racshell
 
         set_color_output_enabled(!program.get<bool>("no-color"));
 
-        const std::string entity_value = program.get<std::string>(spec.entity_argument);
-        if (entity_value.length() > spec.max_name_length)
+        const std::string display_entity_value = program.get<std::string>(spec.entity_argument);
+        if (display_entity_value.length() > spec.max_name_length)
         {
             print_error(std::cerr, spec.entity_validation_error);
             return 1;
         }
+        const std::string request_entity_value = to_racf_identifier_text(display_entity_value);
 
         const bool debug = program.get<bool>("debug");
         const bool json_output = program.get<bool>("json");
@@ -83,7 +84,7 @@ namespace racshell
         nlohmann::json request = {
             {"operation", spec.operation},
             {"admin_type", spec.admin_type},
-            {spec.entity_argument, entity_value}};
+            {spec.entity_argument, request_entity_value}};
 
         if (spec.supports_traits)
         {
@@ -122,7 +123,7 @@ namespace racshell
         if (json_output)
         {
             nlohmann::json output;
-            output[spec.entity_argument] = entity_value;
+            output[spec.entity_argument] = display_entity_value;
             output["status"] = spec.success_verb;
 
             std::cout << output.dump(2) << "\n";
@@ -130,7 +131,7 @@ namespace racshell
         else
         {
             print_success_prefix(std::cout);
-            std::cout << spec.success_label << " " << entity_value << " " << spec.success_verb << " successfully.\n";
+            std::cout << spec.success_label << " " << display_entity_value << " " << spec.success_verb << " successfully.\n";
         }
         return 0;
     }

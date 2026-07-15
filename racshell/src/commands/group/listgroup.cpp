@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     racshell::set_color_output_enabled(!program.get<bool>("no-color"));
 
-    std::string input = program.get<std::string>("group");
+    const std::string input = program.get<std::string>("group");
 
     if (input.length() > 8)
     {
@@ -52,11 +52,12 @@ int main(int argc, char *argv[])
         bool json_output = program.get<bool>("json");
         bool all_json = program.get<bool>("all-json");
         bool csdata = program.get<bool>("csdata");
+        const std::string request_group = racshell::to_racf_identifier_text(input);
 
         nlohmann::json req = {
             {"operation", "extract"},
             {"admin_type", "group"},
-            {"group", input}};
+            {"group", request_group}};
 
         std::string request_json = req.dump();
         sear_result_t *result = sear(request_json.c_str(), request_json.length(), debug);
