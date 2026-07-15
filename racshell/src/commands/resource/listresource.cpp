@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     }
 
     const std::string request_resource = racshell::to_racf_identifier_text(display_resource);
-    const std::string request_resource_class = racshell::to_racf_identifier_text(display_resource_class);
+    const std::string request_resource_class = racshell::to_racf_resource_class_text(display_resource_class);
 
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");

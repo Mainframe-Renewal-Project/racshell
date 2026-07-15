@@ -84,6 +84,25 @@ namespace racshell
         return value;
     }
 
+    /**
+     * @brief Converts and pads a resource class name for fixed-width IRRSEQ00 requests.
+     * @param value Resource class text from CLI/UI.
+     * @return Converted class text padded to 8 characters with ASCII spaces.
+     *
+     * SEAR's resource extract/search path copies the provided class string into an
+     * 8-byte fixed-width field after converting the whole input string to IBM-1047.
+     * Padding here ensures the trailing blank is also converted and copied.
+     */
+    inline std::string to_racf_resource_class_text(std::string value)
+    {
+        value = to_racf_identifier_text(std::move(value));
+        if (value.length() < 8)
+        {
+            value.append(8 - value.length(), ' ');
+        }
+        return value;
+    }
+
     namespace terminal_color
     {
 
