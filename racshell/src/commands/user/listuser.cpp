@@ -45,10 +45,10 @@ int main(int argc, char *argv[])
 
     racshell::set_color_output_enabled(!program.get<bool>("no-color"));
 
-    std::string input = program.get<std::string>("user");
+    const std::string display_userid = program.get<std::string>("user");
 
     // Check if the input is too long to be a valid user
-    if (input.length() > 8)
+    if (display_userid.length() > 8)
     {
         racshell::print_error(std::cerr, "Invalid input, must be a valid RACF userid");
         return 1;
@@ -66,11 +66,13 @@ int main(int argc, char *argv[])
         bool json_output = program.get<bool>("json");
         bool all_json = program.get<bool>("all-json");
         
+        const std::string request_userid = racshell::to_racf_identifier_text(display_userid);
+
         // extract user information
         nlohmann::json req = {
             {"operation", "extract"},
             {"admin_type", "user"},
-            {"userid", input}};
+            {"userid", request_userid}};
 
         std::string request_json = req.dump();
         sear_result_t *result = sear(request_json.c_str(), request_json.length(), debug);
@@ -91,7 +93,7 @@ int main(int argc, char *argv[])
         nlohmann::json profile = sear_info.profile;
 
         UserData user_data;
-        user_data.userid = input;
+        user_data.userid = display_userid;
         racshell::assign_string(base, "base:name", user_data.name);
         racshell::assign_string(base, "base:owner", user_data.owner);
         racshell::assign_string(base, "base:default_group", user_data.owner);
