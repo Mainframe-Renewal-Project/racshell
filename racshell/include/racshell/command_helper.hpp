@@ -48,7 +48,11 @@ namespace racshell
      */
     inline std::string to_racf_identifier_text(std::string value)
     {
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 2> mapping = {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 6> mapping = {
+            std::pair<std::string_view, std::string_view>{"Å", "$"},
+            std::pair<std::string_view, std::string_view>{"å", "$"},
+            std::pair<std::string_view, std::string_view>{"Æ", "#"},
+            std::pair<std::string_view, std::string_view>{"æ", "#"},
             std::pair<std::string_view, std::string_view>{"Ø", "@"},
             std::pair<std::string_view, std::string_view>{"ø", "@"}};
 
@@ -68,6 +72,8 @@ namespace racshell
     inline std::string from_racf_identifier_text(std::string value)
     {
         static constexpr std::array<std::pair<std::string_view, std::string_view>, 1> mapping = {
+            std::pair<std::string_view, std::string_view>{"$", "Å"},
+            std::pair<std::string_view, std::string_view>{"#", "Æ"},
             std::pair<std::string_view, std::string_view>{"@", "Ø"}};
 
         for (const auto &entry : mapping)
