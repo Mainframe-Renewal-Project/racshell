@@ -3,21 +3,33 @@ cmake_minimum_required(VERSION 3.24)
 
 project(racshell C CXX)
 
-set(CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+if(MSVC)
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " /O2")
+else()
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " -O3 -march=arch14")
+endif()
 
 add_subdirectory(sear)
 
 add_library(
     racshell
 
-    racshell/lib/formatters/text_formatter.cpp
-    racshell/lib/formatters/json_formatter.cpp
+    racshell/include/formatters/text_formatter.cpp
+    racshell/include/formatters/json_formatter.cpp
 )
 
 target_include_directories(
     racshell PUBLIC
     racshell
-    racshell/lib
+    racshell/include
     externals/argparse/
     externals/nlohmann/
 )
@@ -25,77 +37,119 @@ target_include_directories(
 # Link racshell with the sear library target defined in sear/CMakeLists.txt
 target_link_libraries(racshell PUBLIC sear)
 
-add_executable(listuser "racshell/listuser.cpp")
-target_link_libraries(listuser racshell -static)
-
-add_executable(listgroup "racshell/listgroup.cpp")
-target_link_libraries(listgroup racshell -static)
-
-add_executable(adduser "racshell/adduser.cpp")
+# User commands
+add_executable(adduser "racshell/src/commands/user/adduser.cpp")
 target_link_libraries(adduser racshell -static)
 
-add_executable(addgroup "racshell/addgroup.cpp")
-target_link_libraries(addgroup racshell -static)
-
-add_executable(deleteuser "racshell/deleteuser.cpp")
-target_link_libraries(deleteuser racshell -static)
-
-add_executable(deletegroup "racshell/deletegroup.cpp")
-target_link_libraries(deletegroup racshell -static)
-
-add_executable(altuser "racshell/altuser.cpp")
+add_executable(altuser "racshell/src/commands/user/altuser.cpp")
 target_link_libraries(altuser racshell -static)
 
-add_executable(altgroup "racshell/altgroup.cpp")
+add_executable(deleteuser "racshell/src/commands/user/deleteuser.cpp")
+target_link_libraries(deleteuser racshell -static)
+
+add_executable(listuser "racshell/src/commands/user/listuser.cpp")
+target_link_libraries(listuser racshell -static)
+
+add_executable(searchusers "racshell/src/commands/user/searchusers.cpp")
+target_link_libraries(searchusers racshell -static)
+
+add_executable(compareusers "racshell/src/commands/user/compareusers.cpp")
+target_link_libraries(compareusers racshell -static)
+
+add_executable(resume "racshell/src/commands/user/resume.cpp")
+target_link_libraries(resume racshell -static)
+
+add_executable(revoke "racshell/src/commands/user/revoke.cpp")
+target_link_libraries(revoke racshell -static)
+
+add_executable(resetpassword "racshell/src/commands/user/resetpassword.cpp")
+target_link_libraries(resetpassword racshell -static)
+
+add_executable(resetpassphrase "racshell/src/commands/user/resetpassphrase.cpp")
+target_link_libraries(resetpassphrase racshell -static)
+
+# Group commands
+add_executable(addgroup "racshell/src/commands/group/addgroup.cpp")
+target_link_libraries(addgroup racshell -static)
+
+add_executable(altgroup "racshell/src/commands/group/altgroup.cpp")
 target_link_libraries(altgroup racshell -static)
 
-add_executable(connect "racshell/connect.cpp")
+add_executable(deletegroup "racshell/src/commands/group/deletegroup.cpp")
+target_link_libraries(deletegroup racshell -static)
+
+add_executable(listgroup "racshell/src/commands/group/listgroup.cpp")
+target_link_libraries(listgroup racshell -static)
+
+add_executable(searchgroups "racshell/src/commands/group/searchgroups.cpp")
+target_link_libraries(searchgroups racshell -static)
+
+add_executable(comparegroups "racshell/src/commands/group/comparegroups.cpp")
+target_link_libraries(comparegroups racshell -static)
+
+add_executable(connect "racshell/src/commands/group/connect.cpp")
 target_link_libraries(connect racshell -static)
 
-add_executable(remove "racshell/remove.cpp")
+add_executable(remove "racshell/src/commands/group/remove.cpp")
 target_link_libraries(remove racshell -static)
 
-add_executable(adddataset "racshell/adddataset.cpp")
+# Dataset commands
+add_executable(adddataset "racshell/src/commands/dataset/adddataset.cpp")
 target_link_libraries(adddataset racshell -static)
 
-add_executable(deletedataset "racshell/deletedataset.cpp")
+add_executable(altdataset "racshell/src/commands/dataset/altdataset.cpp")
+target_link_libraries(altdataset racshell -static)
+
+add_executable(deletedataset "racshell/src/commands/dataset/deletedataset.cpp")
 target_link_libraries(deletedataset racshell -static)
 
-add_executable(listdataset "racshell/listdataset.cpp")
+add_executable(listdataset "racshell/src/commands/dataset/listdataset.cpp")
 target_link_libraries(listdataset racshell -static)
 
-add_executable(listresource "racshell/listresource.cpp")
-target_link_libraries(listresource racshell -static)
+add_executable(searchdatasets "racshell/src/commands/dataset/searchdatasets.cpp")
+target_link_libraries(searchdatasets racshell -static)
 
-add_executable(addresource "racshell/addresource.cpp")
-target_link_libraries(addresource racshell -static)
-
-add_executable(altresource "racshell/altresource.cpp")
-target_link_libraries(altresource racshell -static)
-
-add_executable(deleteresource "racshell/deleteresource.cpp")
-target_link_libraries(deleteresource racshell -static)
-
-add_executable(searchresource "racshell/searchresource.cpp")
-target_link_libraries(searchresource racshell -static)
-
-add_executable(permitdataset "racshell/permitdataset.cpp")
+add_executable(permitdataset "racshell/src/commands/dataset/permitdataset.cpp")
 target_link_libraries(permitdataset racshell -static)
 
-add_executable(permitresource "racshell/permitresource.cpp")
-target_link_libraries(permitresource racshell -static)
-
-add_executable(deletepermitdataset "racshell/deletepermitdataset.cpp")
+add_executable(deletepermitdataset "racshell/src/commands/dataset/deletepermitdataset.cpp")
 target_link_libraries(deletepermitdataset racshell -static)
 
-add_executable(deletepermitresource "racshell/deletepermitresource.cpp")
+# Resource commands
+add_executable(addresource "racshell/src/commands/resource/addresource.cpp")
+target_link_libraries(addresource racshell -static)
+
+add_executable(altresource "racshell/src/commands/resource/altresource.cpp")
+target_link_libraries(altresource racshell -static)
+
+add_executable(deleteresource "racshell/src/commands/resource/deleteresource.cpp")
+target_link_libraries(deleteresource racshell -static)
+
+add_executable(listresource "racshell/src/commands/resource/listresource.cpp")
+target_link_libraries(listresource racshell -static)
+
+add_executable(searchresource "racshell/src/commands/resource/searchresource.cpp")
+target_link_libraries(searchresource racshell -static)
+
+add_executable(permitresource "racshell/src/commands/resource/permitresource.cpp")
+target_link_libraries(permitresource racshell -static)
+
+add_executable(deletepermitresource "racshell/src/commands/resource/deletepermitresource.cpp")
 target_link_libraries(deletepermitresource racshell -static)
 
 add_custom_target(
     racshell_commands
     DEPENDS
     listuser
+    searchusers
+    compareusers
+    resume
+    revoke
+    resetpassword
+    resetpassphrase
     listgroup
+    searchgroups
+    comparegroups
     adduser
     addgroup
     deleteuser
@@ -107,6 +161,7 @@ add_custom_target(
     adddataset
     deletedataset
     listdataset
+    searchdatasets
     listresource
     addresource
     altresource

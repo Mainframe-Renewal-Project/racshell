@@ -14,16 +14,25 @@ The following commands are currently implemented in `racshell/`.
 | `altuser` | User | Alter RACF user | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deleteuser` | User | Delete RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `listuser` | User | Display RACF user details | `--groups`, `--tso`, `--kerberos`, `--cics`, `--omvs`, `--security`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
+| `searchusers` | User | Search RACF users | `--filter`, `--json`, `--debug`, `--all-json`, `--no-color` |
+| `compareusers` | User | Compare two RACF users | `--json`, `--all-json`, `--debug`, `--no-color` |
+| `resume` | User | Resume a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `revoke` | User | Revoke a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `resetpassword` | User | Reset RACF user password | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `resetpassphrase` | User | Reset RACF user passphrase | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `addgroup` | Group | Create RACF group | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `altgroup` | Group | Alter RACF group | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deletegroup` | Group | Delete RACF group | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `connect` | Group | Connect user to RACF group | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `remove` | Group | Remove user from RACF group | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `listgroup` | Group | Display RACF group details | `--users`, `--omvs`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
+| `searchgroups` | Group | Search RACF groups | `--filter`, `--json`, `--debug`, `--all-json`, `--no-color` |
+| `comparegroups` | Group | Compare two RACF groups | `--users`, `--omvs`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
 | `adddataset` | Dataset | Create RACF dataset profile | `--generic`, `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `altdataset` | Dataset | Alter RACF dataset profile | `--generic`, `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deletedataset` | Dataset | Delete RACF dataset profile | `--generic`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `listdataset` | Dataset | Display RACF dataset profile details | `--generic`, `--csdata`, `--json`, `--debug`, `--all-json`, `--no-color` |
+| `searchdatasets` | Dataset | Search RACF dataset profiles | `--filter`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `addresource` | Resource | Create RACF resource profile | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `altresource` | Resource | Alter RACF resource profile | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deleteresource` | Resource | Delete RACF resource profile | `--json`, `--debug`, `--all-json`, `--no-color` |
@@ -107,6 +116,99 @@ Options:
 - `-j, --json` output as JSON
 - `-a, --all-json` output full raw SEAR JSON response
 
+### searchusers
+
+Search for RACF users.
+
+Usage:
+
+`searchusers [options]`
+
+Options:
+
+- `-f, --filter` filter users by userid pattern (optional), e.g. `IBM`
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### compareusers
+
+Compare two RACF users and report any differences in their extracted data.
+
+Usage:
+
+`compareusers <left-user> <right-user> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output differences as JSON
+- `-a, --all-json` output full raw SEAR JSON responses
+
+### resume
+
+Resume a RACF user.
+
+Usage:
+
+`resume <userid> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### revoke
+
+Revoke a RACF user.
+
+Usage:
+
+`revoke <userid> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### resetpassword
+
+Reset a RACF user's password.
+
+Usage:
+
+`resetpassword <userid> <password> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### resetpassphrase
+
+Reset a RACF user's passphrase.
+
+Usage:
+
+`resetpassphrase <userid> <passphrase> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+NOTE: this is not tested, and is lacking of NOPASSWORD to ensure the password is not kept
+
 ### Group Commands
 
 Group administration and lookup commands.
@@ -175,6 +277,40 @@ Options:
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output as JSON
 - `-a, --all-json` output full raw SEAR JSON response
+
+### searchgroups
+
+Search for RACF groups.
+
+Usage:
+
+`searchgroups [options]`
+
+Options:
+
+- `-f, --filter` filter groups by name pattern (optional), e.g. `SYS`
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### comparegroups
+
+Compare two RACF groups and report any differences in their extracted data.
+
+Usage:
+
+`comparegroups <left-group> <right-group> [options]`
+
+Options:
+
+- `-u, --users` compare connected users
+- `-o, --omvs` compare OMVS segment
+- `-x, --csdata` compare CSDATA segment
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output differences as JSON
+- `-a, --all-json` output full raw SEAR JSON responses
 
 ### connect
 
@@ -274,6 +410,22 @@ Options:
 
 - `-g, --generic` treat the dataset name as a generic profile
 - `-x, --csdata` list CSDATA segment
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### searchdatasets
+
+Search for RACF dataset profiles.
+
+Usage:
+
+`searchdatasets [options]`
+
+Options:
+
+- `-f, --filter` filter dataset profiles by name pattern (optional), e.g. `LEONARD`
 - `-n, --no-color` disable colored output
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output as JSON
