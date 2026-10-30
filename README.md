@@ -599,8 +599,23 @@ To compile RACSHELL you will need the following software:
 - OpenSSL 4.x.x or higher from zOpen
 - IBM Clangd compiler 2.1 or higher (C++17 is a hard pre-requisite)
 
+First pull in the RACSHELL repository:
+
+```sh
+git clone https://github.com/Mainframe-Renewal-Project/racshell.git
+```
+
 Make sure to pull in the SEAR submodule before compile, git doesn't do this automatically:
 
 ```sh
 git submodule update --init --recursive sear
 ```
+
+Then kick off the compilation process:
+
+```sh
+cmake --preset zos -DZOSLIB:FILEPATH="$ZOSLIB_ROOT/lib/libzoslib.a"
+cmake --build --preset zos --target racshell_commands
+```
+
+After compilation the commands can be found in the build output directory specified by the CMake preset (./build/zos/).
