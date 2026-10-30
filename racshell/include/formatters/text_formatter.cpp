@@ -114,9 +114,22 @@ std::string TextFormatter::format(const UserData &user)
 
     ss << "User: " << user.userid << "\n";
     ss << "Name: " << user.name << "\n";
+    ss << "Installation data: " << user.installation_data << "\n";
     ss << "Owner: " << user.owner << "\n";
+    ss << "Default group: " << user.default_group << "\n";
     ss << "Created: " << user.created_date << "\n";
+    ss << "Last access date: " << user.last_access_date << "\n";
+    ss << "Last access time: " << user.last_access_time << "\n";
+    ss << "Protected: " << (user.protected_user ? "YES" : "NO") << "\n";
+    ss << "Special: " << (user.special ? "YES" : "NO") << "\n";
+    ss << "Operations: " << (user.operations ? "YES" : "NO") << "\n";
+    ss << "Auditor: " << (user.auditor ? "YES" : "NO") << "\n";
+    ss << "Read-only auditor: " << (user.read_only_auditor ? "YES" : "NO") << "\n";
     ss << "Revoked: " << (user.revoked ? "YES" : "NO") << "\n";
+    ss << "Password expired: " << (user.password_expired ? "YES" : "NO") << "\n";
+    ss << "Has passphrase: " << (user.has_passphrase ? "YES" : "NO") << "\n";
+    ss << "Has password: " << (user.has_password ? "YES" : "NO") << "\n";
+    ss << "MFA active: " << (user.mfa_active ? "YES" : "NO") << "\n";
 
     if (!user.groups.empty())
     {

@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
         user_data.userid = display_userid;
         racshell::assign_string(base, "base:name", user_data.name);
         racshell::assign_string(base, "base:installation_data", user_data.installation_data);
-        racshell::assign_bool(base, "base:protected", user_data.protected);
+        racshell::assign_bool(base, "base:protected", user_data.protected_user);
         racshell::assign_bool(base, "base:special", user_data.special);
         racshell::assign_bool(base, "base:operations", user_data.operations);
         racshell::assign_bool(base, "base:auditor", user_data.auditor);
