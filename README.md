@@ -593,6 +593,7 @@ Options:
 
 To compile RACSHELL you will need the following software:
 
+- Git from Open Enterprise Foundation
 - CMake from zOpen
 - zoslib from zOpen
 - OpenSSL 4.x.x or higher from zOpen
