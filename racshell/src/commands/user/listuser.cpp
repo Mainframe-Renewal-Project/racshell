@@ -95,10 +95,22 @@ int main(int argc, char *argv[])
         UserData user_data;
         user_data.userid = display_userid;
         racshell::assign_string(base, "base:name", user_data.name);
+        racshell::assign_string(base, "base:installation_data", user_data.installation_data);
+        racshell::assign_bool(base, "base:protected", user_data.protected);
+        racshell::assign_bool(base, "base:special", user_data.special);
+        racshell::assign_bool(base, "base:operations", user_data.operations);
+        racshell::assign_bool(base, "base:auditor", user_data.auditor);
+        racshell::assign_bool(base, "base:read_only_auditor", user_data.read_only_auditor);
         racshell::assign_string(base, "base:owner", user_data.owner);
-        racshell::assign_string(base, "base:default_group", user_data.owner);
+        racshell::assign_string(base, "base:default_group", user_data.default_group);
         racshell::assign_string(base, "base:create_date", user_data.created_date);
+        racshell::assign_string(base, "base:last_access_date", user_data.last_access_date);
+        racshell::assign_string(base, "base:last_access_time", user_data.last_access_time);
         racshell::assign_bool(base, "base:revoked", user_data.revoked);
+        racshell::assign_bool(base, "base:password_expired", user_data.password_expired);
+        racshell::assign_bool(base, "base:has_passphrase", user_data.has_passphrase);
+        racshell::assign_bool(base, "base:has_password", user_data.has_password);
+        racshell::assign_bool(base, "base:mfa_active", user_data.mfa_active);
 
         if (security)
         {
