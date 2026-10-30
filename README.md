@@ -1,6 +1,10 @@
 # RACSHELL
 
-Open source RACF shell interface intended for z/OS Unix SSH sessions
+Open source RACF shell interface intended for z/OS Unix SSH sessions. Built with SEAR and C++17.
+
+## Permissions
+
+To use RACSHELL you will need access to one or more of the accesses documented in the [SEAR documentation](https://mainframe-renewal-project.github.io/sear-docs/authorizations/), depending on the commands you intend to execute. You will also need access to group special, system special, read-only auditor, or FIELD class profiles in addition to the IRRSEQ00, IRRSDL64, and IRRSMO00 API accesses. Whether you can make do with something like group/system special or group/system auditor depends on whether or not you need to change or list things in RACF.
 
 ## Commands
 
@@ -584,3 +588,34 @@ Options:
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output as JSON
 - `-a, --all-json` output full raw SEAR JSON response
+
+## Build pre-reqs
+
+To compile RACSHELL you will need the following software:
+
+- Git from Open Enterprise Foundation
+- CMake from zOpen
+- zoslib from zOpen
+- OpenSSL 4.x.x or higher from zOpen
+- IBM Clangd compiler 2.1 or higher (C++17 is a hard pre-requisite)
+
+First pull in the RACSHELL repository:
+
+```sh
+git clone https://github.com/Mainframe-Renewal-Project/racshell.git
+```
+
+Make sure to pull in the SEAR submodule before compile, git doesn't do this automatically:
+
+```sh
+git submodule update --init --recursive sear
+```
+
+Then kick off the compilation process:
+
+```sh
+cmake --preset zos -DZOSLIB:FILEPATH="$ZOSLIB_ROOT/lib/libzoslib.a"
+cmake --build --preset zos --target racshell_commands
+```
+
+After compilation the commands can be found in the build output directory specified by the CMake preset (./build/zos/).

@@ -34,9 +34,22 @@ std::string JsonFormatter::format(const UserData &user)
 
     output["userid"] = user.userid;
     output["name"] = user.name;
+    output["installation_data"] = user.installation_data;
     output["owner"] = user.owner;
+    output["default_group"] = user.default_group;
     output["created_date"] = user.created_date;
+    output["last_access_date"] = user.last_access_date;
+    output["last_access_time"] = user.last_access_time;
+    output["protected"] = user.protected_user;
+    output["special"] = user.special;
+    output["operations"] = user.operations;
+    output["auditor"] = user.auditor;
+    output["read_only_auditor"] = user.read_only_auditor;
     output["revoked"] = user.revoked;
+    output["password_expired"] = user.password_expired;
+    output["has_passphrase"] = user.has_passphrase;
+    output["has_password"] = user.has_password;
+    output["mfa_active"] = user.mfa_active;
 
     if (!user.groups.empty())
     {
