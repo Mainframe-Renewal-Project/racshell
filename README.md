@@ -1,6 +1,6 @@
 # RACSHELL
 
-Open source RACF shell interface intended for z/OS Unix SSH sessions
+Open source RACF shell interface intended for z/OS Unix SSH sessions. Built with SEAR and C++17.
 
 ## Permissions
 
@@ -588,3 +588,18 @@ Options:
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output as JSON
 - `-a, --all-json` output full raw SEAR JSON response
+
+## Build pre-reqs
+
+To compile RACSHELL you will need the following software:
+
+- CMake from zOpen
+- zoslib from zOpen
+- OpenSSL 4.x.x or higher from zOpen
+- IBM Clangd compiler 2.1 or higher (C++17 is a hard pre-requisite)
+
+Make sure to pull in the SEAR submodule before compile, git doesn't do this automatically:
+
+```sh
+git submodule update --init --recursive sear
+```
