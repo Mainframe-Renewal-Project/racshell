@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
-#include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <set>
 #include <string>
@@ -303,9 +303,7 @@ namespace
         }
     }
 
-    constexpr int default_max_width = 120;
-
-    // Redirected output has no terminal to measure, so fall back to $COLUMNS and then a fixed width.
+    // Redirected output has no terminal to measure, so it is left unlimited.
     int terminal_columns()
     {
 #ifdef RACSHELL_HAVE_IOCTL
@@ -315,9 +313,7 @@ namespace
             return size.ws_col;
         }
 #endif
-        const char *columns = std::getenv("COLUMNS");
-        const int parsed = columns != nullptr ? std::atoi(columns) : 0;
-        return parsed > 0 ? parsed : default_max_width;
+        return std::numeric_limits<int>::max();
     }
 
     nlohmann::json to_json(const Node &node)
