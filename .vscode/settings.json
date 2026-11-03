@@ -3,6 +3,8 @@
         "cics",
         "omvs",
         "RACF",
-        "racshell"
+        "racshell",
+        "RRSF",
+        "rrsflist"
     ]
 }

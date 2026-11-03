@@ -56,8 +56,127 @@ The following commands are currently implemented in `racshell/`.
 | `addkeyring` | Keyring | Create a RACF keyring | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deletekeyring` | Keyring | Delete a RACF keyring | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `listkeyring` | Keyring | Display keyring and certificate details | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `racfctl` | System | Display or alter RACF system options (SETROPTS) | `list`, `modify`, `refresh`, `--json`, `--debug`, `--all-json`, `--no-color` |
+| `rrsflist` | RRSF | Display RRSF configuration and nodes (read-only) | `--nodes`, `--settings`, `--json`, `--debug`, `--all-json`, `--no-color` |
 
 All commands accept `-n`, `--no-color`, or `--no-colour` to disable colored output.
+
+## System Options
+
+### racfctl
+
+Display or alter RACF system options from z/OS Unix, using SEAR's `racf-options` interface rather than invoking TSO SETROPTS.
+
+Usage:
+
+`racfctl list [options]`
+
+`racfctl modify [<trait> ...] [options]`
+
+`racfctl refresh <class> [--generic] [options]`
+
+`list` displays system settings in grouped, colored sections. Class lists are hidden by default. `modify` requires at least one system option flag or positional `key=value` trait and performs an alter request. Flags and positional traits can be combined, but the same trait cannot be supplied in both forms. Positional values are parsed as booleans, integers, or strings; flags preserve the data types expected by SEAR.
+
+List detail flags (`list` only, can be combined):
+
+- `-c, --classes` display all class lists
+- `--active-classes` display active classes
+- `--raclist` display RACLIST classes
+- `--generic` display generic profile checking classes
+- `--genlist` display generic profile sharing classes
+- `--generic-command-classes` display generic command classes
+- `--audit-classes` display profile change auditing classes
+- `--statistics-classes` display statistics classes
+- `--global-access-classes` display global access classes
+- `--logging-classes` display audit logging class lists
+
+These selectors also apply to `--json`. Use `--all-json` for the unfiltered SEAR response, including all class lists.
+
+`refresh` requires one class name and refreshes RACLIST profiles by default. `-g, --generic` selects GENERIC profiles instead. Class names are normalized to uppercase. A bare `racfctl refresh` is rejected; there is no automatic all-class refresh. Refreshing is a separate subcommand, not a `modify --refresh` flag.
+
+Common system option flags (`modify` only):
+
+| Flag | Value | Purpose |
+| --- | --- | --- |
+| `--classact`, `--noclassact` | classes | Activate or deactivate classes |
+| `--raclist`, `--noraclist` | classes | Enable or disable RACLIST processing |
+| `--generic` | classes | Enable generic profile checking |
+| `--genlist`, `--nogenlist` | classes | Enable or disable generic profile sharing |
+| `--audit`, `--noaudit` | classes | Enable or disable profile change auditing |
+| `--password-interval` | interval | Maximum password change interval |
+| `--min-password-interval` | interval | Minimum password change interval |
+| `--passphrase-interval` | interval | Passphrase change interval |
+| `--password-warning` | interval | Password expiration warning interval |
+| `--inactive-interval` | interval | Inactive userid revocation interval |
+| `--password-history` | unsigned integer | Previous passwords to remember |
+| `--max-password-attempts` | unsigned integer | Incorrect password attempts before revocation |
+| `--mixed-case-passwords` | `true` or `false` | Mixed-case password support |
+| `--special-character-passwords` | `true` or `false` | Special password character support |
+| `--program-control` | `true` or `false` | Program control |
+| `--special-user-audit` | `true` or `false` | Audit commands issued by SPECIAL users |
+| `--operator-audit` | `true` or `false` | Audit operator actions |
+| `--group-list` | `true` or `false` | List-of-groups access checking |
+| `--initstat` | `true` or `false` | User verification statistics |
+
+Quote space-separated class names when specifying multiple classes, for example `--classact 'FACILITY XFACILIT'`. Interval flags are passed as SEAR strings; integer flags reject negative or nonnumeric values.
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output the extracted profile or operation status as JSON
+- `-a, --all-json` output full raw SEAR JSON response; failed requests still return a nonzero exit status
+
+Examples:
+
+```sh
+racfctl list
+racfctl list --active-classes
+racfctl list --raclist --generic
+racfctl list --classes
+racfctl list --json
+racfctl modify --max-password-attempts 5 --password-history 10
+racfctl refresh appl
+racfctl refresh --generic DATASET
+racfctl modify --mixed-case-passwords true --special-user-audit false
+racfctl modify --classact 'FACILITY XFACILIT' base:program_control=true
+```
+
+Warning: changes affect the whole system. Review planned changes before executing them, and protect extracted settings and debug output as sensitive information.
+
+See SEAR's [system options examples](https://mainframe-renewal-project.github.io/sear-docs/python/setropts/) and [supported RACF options traits](https://mainframe-renewal-project.github.io/sear-docs/traits/racf_options/) for the full set of available settings, including RACLIST refresh traits.
+
+## RRSF
+
+### rrsflist
+
+Display the RRSF configuration using SEAR's `racf-rrsf` extract interface. This command is read-only; SEAR does not support adding, modifying, deleting, or searching RRSF configuration.
+
+Usage:
+
+`rrsflist [options]`
+
+By default, the command shows subsystem and direction settings with a compact overview of each node. Detailed workspace, network, and notification information is optional.
+
+Options:
+
+- `-N, --nodes` display full node details
+- `-s, --settings` display notification destinations and output settings
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output the selected configuration details as JSON
+- `-a, --all-json` output the unfiltered raw SEAR JSON response; failed requests still return a nonzero exit status
+
+Examples:
+
+```sh
+rrsflist
+rrsflist --nodes --settings
+rrsflist --json
+rrsflist --all-json
+```
+
+RRSF data and debug output contain sensitive system-layout and network information. Store them securely. See SEAR's [RRSF documentation](https://mainframe-renewal-project.github.io/sear-docs/python/rrsf/) for details and required API support.
 
 ## User Commands
 

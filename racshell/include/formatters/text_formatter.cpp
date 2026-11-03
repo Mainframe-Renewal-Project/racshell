@@ -77,6 +77,50 @@ namespace
         append_styled_value(ss, value);
     }
 
+    void append_rrsf_fields(std::stringstream &ss, const nlohmann::json &value, std::size_t indent)
+    {
+        const std::string padding(indent, ' ');
+        if (value.is_object())
+        {
+            for (const auto &field : value.items())
+            {
+                ss << padding << format_security_key(field.key()) << ":";
+                if (field.value().is_structured() && !field.value().empty())
+                {
+                    ss << "\n";
+                    append_rrsf_fields(ss, field.value(), indent + 2);
+                }
+                else
+                {
+                    ss << " ";
+                    if (field.value().is_structured())
+                        append_styled_value(ss, "None");
+                    else
+                        append_styled_value(ss, field.value());
+                    ss << "\n";
+                }
+            }
+        }
+        else if (value.is_array())
+        {
+            for (std::size_t index = 0; index < value.size(); ++index)
+            {
+                ss << padding << "Entry " << index + 1 << ":";
+                if (value[index].is_structured())
+                {
+                    ss << "\n";
+                    append_rrsf_fields(ss, value[index], indent + 2);
+                }
+                else
+                {
+                    ss << " ";
+                    append_styled_value(ss, value[index]);
+                    ss << "\n";
+                }
+            }
+        }
+    }
+
     void append_comparison_value_text(std::stringstream &ss, const nlohmann::json &value)
     {
         if (value.is_boolean())
@@ -185,6 +229,133 @@ namespace
     }
 
 } // namespace
+
+std::string TextFormatter::format(const RrsfData &rrsf)
+{
+    std::stringstream ss;
+    racshell::print_colored_text(ss, racshell::terminal_color::cyan, "RRSF configuration");
+    ss << "\n";
+    const auto &base = rrsf.profile.at("base");
+    for (const auto &field : base.items())
+    {
+        if (!field.value().is_structured())
+            append_field(ss, format_security_key(field.key()) + ": ", field.value());
+    }
+    for (const auto &field : base.items())
+    {
+        if (!field.value().is_structured() || field.key() == "base:nodes")
+            continue;
+        append_segment_heading(ss, format_security_key(field.key()));
+        if (field.value().empty())
+            append_field(ss, "  ", "None");
+        else
+            append_rrsf_fields(ss, field.value(), 2);
+    }
+    const auto nodes = base.find("base:nodes");
+    if (nodes == base.end() || nodes->empty())
+    {
+        append_segment_heading(ss, "Nodes");
+        append_field(ss, "  ", "None");
+    }
+    else if (nodes->is_array())
+    {
+        for (std::size_t index = 0; index < nodes->size(); ++index)
+        {
+            append_segment_heading(ss, "Node " + std::to_string(index + 1));
+            append_rrsf_fields(ss, (*nodes)[index], 2);
+        }
+    }
+    return ss.str();
+}
+
+std::string TextFormatter::format(const RacfOptionsData &options)
+{
+    std::stringstream ss;
+    racshell::print_colored_text(ss, racshell::terminal_color::cyan, "RACF system options");
+    ss << "\n";
+    const std::array<std::string, 6> headings = {
+        "General", "Password policy", "Auditing", "Security labels", "JES", "Classes"};
+    std::array<nlohmann::json, 6> sections;
+    for (auto &section : sections)
+    {
+        section = nlohmann::json::object();
+    }
+    for (const auto &segment : options.profile.items())
+    {
+        for (const auto &option : segment.value().items())
+        {
+            const auto &key = option.key();
+            std::size_t section = 0;
+            if (key.find("_classes") != std::string::npos || key == "base:raclist")
+                section = 5;
+            else if (key.find("password") != std::string::npos || key.find("passphrase") != std::string::npos || key == "base:revoke_inactive_userids_interval")
+                section = 1;
+            else if (key.find("audit") != std::string::npos || key.find("base:log_") == 0)
+                section = 2;
+            else if (key.find("security_label") != std::string::npos || key.find("multi_level_security") != std::string::npos)
+                section = 3;
+            else if (key.find("base:jes_") == 0)
+                section = 4;
+            sections[section][key] = option.value();
+        }
+    }
+    for (std::size_t section = 0; section < sections.size(); ++section)
+    {
+        if (sections[section].empty())
+            continue;
+        append_segment_heading(ss, headings[section]);
+        for (const auto &option : sections[section].items())
+        {
+            const std::string label = option.key() == "base:raclist" ? "RACLIST classes" : format_security_key(option.key());
+            ss << "  " << label << ":";
+            if (section != 5)
+            {
+                ss << " ";
+                append_styled_value(ss, option.value());
+                ss << "\n";
+                continue;
+            }
+            std::vector<std::string> classes;
+            if (option.value().is_array())
+            {
+                for (const auto &name : option.value())
+                    classes.push_back(racshell::value_to_text(name));
+            }
+            else if (option.value().is_string())
+            {
+                std::istringstream names(option.value().get<std::string>());
+                for (std::string name; names >> name;)
+                    classes.push_back(name);
+            }
+            else
+            {
+                ss << " ";
+                append_styled_value(ss, option.value());
+                ss << "\n";
+                continue;
+            }
+            if (classes.empty())
+            {
+                ss << " ";
+                append_styled_value(ss, "None");
+                ss << "\n";
+                continue;
+            }
+            ss << "\n";
+            for (std::size_t index = 0; index < classes.size(); ++index)
+            {
+                if (index % 6 == 0)
+                    ss << "    ";
+                append_styled_value(ss, classes[index]);
+                if (index % 6 == 5 || index + 1 == classes.size())
+                    ss << "\n";
+                else
+                    ss << std::string(classes[index].size() < 12 ? 12 - classes[index].size() : 1, ' ');
+            }
+        }
+    }
+    return ss.str();
+}
 
 std::string TextFormatter::format(const UserData &user)
 {
