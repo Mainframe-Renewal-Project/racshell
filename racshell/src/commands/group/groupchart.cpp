@@ -8,6 +8,12 @@
 #include <string_view>
 #include <vector>
 
+#if __has_include(<sys/ioctl.h>)
+#include <sys/ioctl.h>
+#include <unistd.h>
+#define RACSHELL_HAVE_IOCTL 1
+#endif
+
 #include <nlohmann/json.hpp>
 
 #include "sear/sear.h"
@@ -131,6 +137,26 @@ namespace
         node.width = std::max(box_width(node), children_width);
     }
 
+    void draw_box(Canvas &canvas, const Node &node, int box_left, int top)
+    {
+        const int box_w = box_width(node);
+        canvas.put(box_left, top, "┌", tc::blue);
+        canvas.put(box_left + box_w - 1, top, "┐", tc::blue);
+        canvas.put(box_left, top + 2, "└", tc::blue);
+        canvas.put(box_left + box_w - 1, top + 2, "┘", tc::blue);
+        canvas.put(box_left, top + 1, "│", tc::blue);
+        canvas.put(box_left + box_w - 1, top + 1, "│", tc::blue);
+        for (int x = box_left + 1; x < box_left + box_w - 1; ++x)
+        {
+            canvas.put(x, top, "─", tc::blue);
+            canvas.put(x, top + 2, "─", tc::blue);
+        }
+        for (std::size_t i = 0; i < node.name.length(); ++i)
+        {
+            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, std::string(1, node.name[i]), tc::cyan);
+        }
+    }
+
     // Draws the subtree into [origin, origin + node.width) and returns the box center column.
     int place(const Node &node, int origin, int depth, Canvas &canvas)
     {
@@ -162,21 +188,7 @@ namespace
 
         const int center = box_left + box_w / 2;
 
-        canvas.put(box_left, top, "┌", tc::blue);
-        canvas.put(box_left + box_w - 1, top, "┐", tc::blue);
-        canvas.put(box_left, top + 2, "└", tc::blue);
-        canvas.put(box_left + box_w - 1, top + 2, "┘", tc::blue);
-        canvas.put(box_left, top + 1, "│", tc::blue);
-        canvas.put(box_left + box_w - 1, top + 1, "│", tc::blue);
-        for (int x = box_left + 1; x < box_left + box_w - 1; ++x)
-        {
-            canvas.put(x, top, "─", tc::blue);
-            canvas.put(x, top + 2, "─", tc::blue);
-        }
-        for (std::size_t i = 0; i < node.name.length(); ++i)
-        {
-            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, std::string(1, node.name[i]), tc::cyan);
-        }
+        draw_box(canvas, node, box_left, top);
 
         if (depth > 0)
         {
@@ -214,20 +226,75 @@ namespace
         return center;
     }
 
-    void print_vertical(const Node &node, const std::string &prefix, bool is_last, bool is_root, std::ostream &out)
-    {
-        out << prefix;
-        if (!is_root)
-        {
-            racshell::print_colored_text(out, tc::gray, is_last ? "└── " : "├── ");
-        }
-        racshell::print_colored_text(out, tc::cyan, node.name) << "\n";
+    constexpr int indent_step = 3;
 
-        const std::string child_prefix = is_root ? prefix : prefix + (is_last ? "    " : "│   ");
+    int vertical_height(const Node &node)
+    {
+        int height = 3;
+        for (const auto &child : node.children)
+        {
+            height += vertical_height(child);
+        }
+        return height;
+    }
+
+    int vertical_width(const Node &node, int left_edge)
+    {
+        int widest = left_edge + box_width(node);
+        for (const auto &child : node.children)
+        {
+            widest = std::max(widest, vertical_width(child, left_edge + indent_step));
+        }
+        return widest;
+    }
+
+    // Children hang below their parent, each indented and joined by a spine.
+    void place_vertical(const Node &node, int left_edge, int top, Canvas &canvas)
+    {
+        draw_box(canvas, node, left_edge, top);
+
+        const int spine = left_edge + 1;
+        int row = top + 3;
+        if (!node.children.empty())
+        {
+            canvas.put(spine, top + 2, "┬", tc::blue);
+        }
         for (std::size_t i = 0; i < node.children.size(); ++i)
         {
-            print_vertical(node.children[i], child_prefix, i + 1 == node.children.size(), false, out);
+            const bool is_last = i + 1 == node.children.size();
+            const int child_rows = vertical_height(node.children[i]);
+
+            if (is_last)
+            {
+                canvas.line(spine, row, up | down);
+                canvas.line(spine, row + 1, up | right);
+            }
+            else
+            {
+                for (int y = row; y < row + child_rows; ++y)
+                {
+                    canvas.line(spine, y, up | down);
+                }
+                canvas.line(spine, row + 1, right);
+            }
+            canvas.line(spine + 1, row + 1, left | right);
+
+            place_vertical(node.children[i], left_edge + indent_step, row, canvas);
+            canvas.put(left_edge + indent_step, row + 1, "┤", tc::blue);
+            row += child_rows;
         }
+    }
+
+    int terminal_columns()
+    {
+#ifdef RACSHELL_HAVE_IOCTL
+        winsize size{};
+        if (isatty(STDOUT_FILENO) && ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) == 0)
+        {
+            return size.ws_col;
+        }
+#endif
+        return 0;
     }
 
     nlohmann::json to_json(const Node &node)
@@ -330,7 +397,7 @@ int main(int argc, char *argv[])
         .scan<'i', int>()
         .default_value(0);
 
-    racshell::add_toggle_argument(program, "-v", "--vertical", "use a compact indented tree instead of boxes");
+    racshell::add_toggle_argument(program, "-v", "--vertical", "stack subgroups vertically (automatic when the chart is wider than the terminal)");
     racshell::add_no_color_argument(program);
     racshell::add_toggle_argument(program, "-d", "--debug", "debug sear request and response");
     racshell::add_toggle_argument(program, "-j", "--json", "output as JSON");
@@ -352,7 +419,7 @@ int main(int argc, char *argv[])
     const int levels = program.get<int>("levels");
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
-    const bool vertical = program.get<bool>("vertical");
+    const bool force_vertical = program.get<bool>("vertical");
 
     if (root_name.length() > 8)
     {
@@ -447,12 +514,15 @@ int main(int argc, char *argv[])
         {
             std::cout << "\n";
         }
-        if (vertical)
+        measure(trees[i]);
+        const int columns = terminal_columns();
+        if (force_vertical || (columns > 0 && trees[i].width > columns))
         {
-            print_vertical(trees[i], "", true, true, std::cout);
+            Canvas canvas(vertical_width(trees[i], 0), vertical_height(trees[i]));
+            place_vertical(trees[i], 0, 0, canvas);
+            canvas.print(std::cout);
             continue;
         }
-        measure(trees[i]);
         Canvas canvas(trees[i].width, tree_depth(trees[i]) * rows_per_level - 2);
         place(trees[i], 0, 0, canvas);
         canvas.print(std::cout);
