@@ -1,5 +1,6 @@
 #include <argparse.hpp>
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <iostream>
 #include <map>
@@ -415,7 +416,10 @@ int main(int argc, char *argv[])
 
     racshell::set_color_output_enabled(!program.get<bool>("no-color"));
 
-    const std::string root_name = program.get<std::string>("root");
+    std::string root_name = program.get<std::string>("root");
+    std::transform(root_name.begin(), root_name.end(), root_name.begin(),
+                   [](unsigned char c)
+                   { return static_cast<char>(std::toupper(c)); });
     const int levels = program.get<int>("levels");
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
