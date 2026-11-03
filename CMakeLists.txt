@@ -87,6 +87,9 @@ target_link_libraries(searchgroups racshell -static)
 add_executable(comparegroups "racshell/src/commands/group/comparegroups.cpp")
 target_link_libraries(comparegroups racshell -static)
 
+add_executable(groupchart "racshell/src/commands/group/groupchart.cpp")
+target_link_libraries(groupchart racshell -static)
+
 add_executable(connect "racshell/src/commands/group/connect.cpp")
 target_link_libraries(connect racshell -static)
 
