@@ -163,6 +163,7 @@ add_custom_target(
     listgroup
     searchgroups
     comparegroups
+    groupchart
     adduser
     addgroup
     deleteuser
