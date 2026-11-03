@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <set>
@@ -108,9 +109,24 @@ namespace
         std::vector<std::vector<Cell>> cells_;
     };
 
+    // Splits UTF-8 text into one string per code point.
+    std::vector<std::string> glyphs_of(const std::string &text)
+    {
+        std::vector<std::string> glyphs;
+        for (const char c : text)
+        {
+            if ((static_cast<unsigned char>(c) & 0xC0) != 0x80 || glyphs.empty())
+            {
+                glyphs.emplace_back();
+            }
+            glyphs.back().push_back(c);
+        }
+        return glyphs;
+    }
+
     int box_width(const Node &node)
     {
-        return static_cast<int>(node.name.length()) + 4;
+        return static_cast<int>(glyphs_of(node.name).size()) + 4;
     }
 
     int tree_depth(const Node &node)
@@ -152,9 +168,10 @@ namespace
             canvas.put(x, top, "─", tc::blue);
             canvas.put(x, top + 2, "─", tc::blue);
         }
-        for (std::size_t i = 0; i < node.name.length(); ++i)
+        const std::vector<std::string> glyphs = glyphs_of(node.name);
+        for (std::size_t i = 0; i < glyphs.size(); ++i)
         {
-            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, std::string(1, node.name[i]), tc::cyan);
+            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, glyphs[i], tc::cyan);
         }
     }
 
@@ -286,16 +303,21 @@ namespace
         }
     }
 
+    constexpr int default_max_width = 120;
+
+    // Redirected output has no terminal to measure, so fall back to $COLUMNS and then a fixed width.
     int terminal_columns()
     {
 #ifdef RACSHELL_HAVE_IOCTL
         winsize size{};
-        if (isatty(STDOUT_FILENO) && ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) == 0)
+        if (isatty(STDOUT_FILENO) && ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) == 0 && size.ws_col > 0)
         {
             return size.ws_col;
         }
 #endif
-        return 0;
+        const char *columns = std::getenv("COLUMNS");
+        const int parsed = columns != nullptr ? std::atoi(columns) : 0;
+        return parsed > 0 ? parsed : default_max_width;
     }
 
     nlohmann::json to_json(const Node &node)
@@ -398,6 +420,11 @@ int main(int argc, char *argv[])
         .scan<'i', int>()
         .default_value(0);
 
+    program.add_argument("-w", "--width")
+        .help("maximum chart width before switching to the vertical layout (0 for terminal width)")
+        .scan<'i', int>()
+        .default_value(0);
+
     racshell::add_toggle_argument(program, "-v", "--vertical", "stack subgroups vertically (automatic when the chart is wider than the terminal)");
     racshell::add_no_color_argument(program);
     racshell::add_toggle_argument(program, "-d", "--debug", "debug sear request and response");
@@ -424,6 +451,7 @@ int main(int argc, char *argv[])
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
     const bool force_vertical = program.get<bool>("vertical");
+    const int max_width = program.get<int>("width") > 0 ? program.get<int>("width") : terminal_columns();
 
     if (root_name.length() > 8)
     {
@@ -519,8 +547,7 @@ int main(int argc, char *argv[])
             std::cout << "\n";
         }
         measure(trees[i]);
-        const int columns = terminal_columns();
-        if (force_vertical || (columns > 0 && trees[i].width > columns))
+        if (force_vertical || trees[i].width > max_width)
         {
             Canvas canvas(vertical_width(trees[i], 0), vertical_height(trees[i]));
             place_vertical(trees[i], 0, 0, canvas);
