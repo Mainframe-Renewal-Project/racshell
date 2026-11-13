@@ -2,12 +2,14 @@
 find_program(
     IBM_CLANG_C ibm-clang64
     HINTS /usr/lpp/IBM/cnw/v2r1/openxl/bin/
+    HINTS /usr/lpp/IBM/cnw/v2r2/openxl/bin/
     REQUIRED
 )
 # look for IBM Clang C++ compiler
 find_program(
     IBM_CLANG_CXX ibm-clang++64
     HINTS /usr/lpp/IBM/cnw/v2r1/openxl/bin/
+    HINTS /usr/lpp/IBM/cnw/v2r2/openxl/bin/
     REQUIRED
 )
 # find assembler
