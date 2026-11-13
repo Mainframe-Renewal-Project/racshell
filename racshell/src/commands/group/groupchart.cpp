@@ -401,6 +401,59 @@ namespace
         return true;
     }
 
+    bool fetch_subtree(Node &node, bool debug, std::set<std::string> &visited,
+                       int depth, int max_depth, std::string &error)
+    {
+        if (max_depth > 0 && depth >= max_depth)
+        {
+            return true;
+        }
+
+        const std::string request = nlohmann::json{
+            {"operation", "extract"},
+            {"admin_type", "group"},
+            {"group", racshell::to_racf_identifier_text(node.name)}}.dump();
+        sear_result_t *result = sear(request.c_str(), request.length(), debug);
+        const racshell::SearResponseInfo info = racshell::validate_sear_response(result->result_json, "group");
+        if (!info.success)
+        {
+            error = node.name + ": " + info.error_message;
+            return false;
+        }
+
+        std::vector<std::string> names;
+        const auto subgroups = info.base.find("base:subgroups");
+        if (subgroups != info.base.end() && subgroups->is_array())
+        {
+            for (const auto &subgroup : *subgroups)
+            {
+                std::string name;
+                racshell::assign_string(subgroup, "base:subgroup", name);
+                name = racshell::from_racf_identifier_text(name);
+                if (!name.empty())
+                {
+                    names.push_back(std::move(name));
+                }
+            }
+        }
+        std::sort(names.begin(), names.end());
+        for (const auto &name : names)
+        {
+            if (!visited.insert(name).second)
+            {
+                continue;
+            }
+            Node child;
+            child.name = name;
+            if (!fetch_subtree(child, debug, visited, depth + 1, max_depth, error))
+            {
+                return false;
+            }
+            node.children.push_back(std::move(child));
+        }
+        return true;
+    }
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -460,69 +513,73 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    root_name = racshell::from_racf_identifier_text(root_name);
     std::string error;
-    std::vector<std::string> groups;
-    if (!fetch_group_names(groups, debug, error))
+    std::vector<Node> trees;
+    std::set<std::string> visited;
+    if (!root_name.empty())
     {
-        racshell::print_error(std::cerr, error);
-        return 1;
-    }
-
-    const std::set<std::string> known(groups.begin(), groups.end());
-    if (!root_name.empty() && known.find(root_name) == known.end())
-    {
-        racshell::print_error(std::cerr, "group " + root_name + " not found");
-        return 1;
-    }
-
-    std::map<std::string, std::vector<std::string>> children_of;
-    std::vector<std::string> roots;
-    for (const auto &name : groups)
-    {
-        std::string superior;
-        if (!fetch_superior(name, debug, superior, error))
+        Node root;
+        root.name = root_name;
+        visited.insert(root_name);
+        if (!fetch_subtree(root, debug, visited, 0, levels, error))
         {
             racshell::print_error(std::cerr, error);
             return 1;
         }
-        if (superior.empty() || superior == name || known.find(superior) == known.end())
-        {
-            roots.push_back(name);
-        }
-        else
-        {
-            children_of[superior].push_back(name);
-        }
-    }
-
-    if (!root_name.empty())
-    {
-        roots = {root_name};
-    }
-    std::sort(roots.begin(), roots.end());
-    for (auto &entry : children_of)
-    {
-        std::sort(entry.second.begin(), entry.second.end());
-    }
-
-    if (roots.empty())
-    {
-        std::cout << "No groups found\n";
-        return 0;
-    }
-
-    std::vector<Node> trees;
-    std::set<std::string> visited;
-    for (const auto &name : roots)
-    {
-        if (!visited.insert(name).second)
-        {
-            continue;
-        }
-        Node root;
-        root.name = name;
-        build_subtree(root, children_of, visited, 0, levels);
         trees.push_back(std::move(root));
+    }
+    else
+    {
+        std::vector<std::string> groups;
+        if (!fetch_group_names(groups, debug, error))
+        {
+            racshell::print_error(std::cerr, error);
+            return 1;
+        }
+
+        const std::set<std::string> known(groups.begin(), groups.end());
+        std::map<std::string, std::vector<std::string>> children_of;
+        std::vector<std::string> roots;
+        for (const auto &name : groups)
+        {
+            std::string superior;
+            if (!fetch_superior(name, debug, superior, error))
+            {
+                racshell::print_error(std::cerr, error);
+                return 1;
+            }
+            if (superior.empty() || superior == name || known.find(superior) == known.end())
+            {
+                roots.push_back(name);
+            }
+            else
+            {
+                children_of[superior].push_back(name);
+            }
+        }
+
+        std::sort(roots.begin(), roots.end());
+        for (auto &entry : children_of)
+        {
+            std::sort(entry.second.begin(), entry.second.end());
+        }
+        if (roots.empty())
+        {
+            std::cout << "No groups found\n";
+            return 0;
+        }
+        for (const auto &name : roots)
+        {
+            if (!visited.insert(name).second)
+            {
+                continue;
+            }
+            Node root;
+            root.name = name;
+            build_subtree(root, children_of, visited, 0, levels);
+            trees.push_back(std::move(root));
+        }
     }
 
     if (json_output)
