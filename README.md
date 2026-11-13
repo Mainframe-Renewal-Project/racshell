@@ -347,7 +347,7 @@ Options:
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output as JSON
 
-With `--omvs`, chart boxes show `no OMVS`, or `OMVS GID=<gid>` (`?` if the GID is unavailable). JSON nodes include an `omvs` boolean and a `gid` number or `null`. With `--users`, boxes show `[users=N]`; JSON nodes include `user_count` as a number or `100+` when the count exceeds 100.
+With `--omvs` and `--users`, each requested detail appears on its own line below the group name. The OMVS line shows `no OMVS` or `OMVS GID=<gid>` (`?` if the GID is unavailable); the user line shows `users=N` or `users=100+`. JSON nodes include an `omvs` boolean and a `gid` number or `null` when `--omvs` is enabled, and `user_count` as a number or `100+` when `--users` is enabled.
 
 ### connect
 

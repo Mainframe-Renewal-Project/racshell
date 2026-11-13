@@ -28,7 +28,6 @@ namespace
     namespace tc = racshell::terminal_color;
 
     constexpr int sibling_gap = 2;
-    constexpr int rows_per_level = 5;
 
     struct OmvsInfo
     {
@@ -133,29 +132,39 @@ namespace
         return glyphs;
     }
 
-    std::string node_label(const Node &node)
+    std::vector<std::string> node_lines(const Node &node)
     {
-        std::string label = node.name;
+        std::vector<std::string> lines{node.name};
         if (node.omvs && !node.omvs->present)
         {
-            label += " [no OMVS]";
+            lines.emplace_back("no OMVS");
         }
         else if (node.omvs)
         {
-            label += " [OMVS GID=" +
-                     (node.omvs->gid.is_null() ? "?" : node.omvs->gid.dump()) + "]";
+            lines.push_back("OMVS GID=" +
+                            (node.omvs->gid.is_null() ? "?" : node.omvs->gid.dump()));
         }
         if (node.user_count)
         {
-            label += " [users=" +
-                     (node.user_count.value() > 100 ? "100+" : std::to_string(node.user_count.value())) + "]";
+            lines.push_back("users=" +
+                            (node.user_count.value() > 100 ? "100+" : std::to_string(node.user_count.value())));
         }
-        return label;
+        return lines;
     }
 
     int box_width(const Node &node)
     {
-        return static_cast<int>(glyphs_of(node_label(node)).size()) + 4;
+        int width = 0;
+        for (const auto &line : node_lines(node))
+        {
+            width = std::max(width, static_cast<int>(glyphs_of(line).size()));
+        }
+        return width + 4;
+    }
+
+    int box_height(const Node &node)
+    {
+        return static_cast<int>(node_lines(node).size()) + 2;
     }
 
     int tree_depth(const Node &node)
@@ -166,6 +175,16 @@ namespace
             deepest = std::max(deepest, tree_depth(child));
         }
         return deepest + 1;
+    }
+
+    int max_box_height(const Node &node)
+    {
+        int height = box_height(node);
+        for (const auto &child : node.children)
+        {
+            height = std::max(height, max_box_height(child));
+        }
+        return height;
     }
 
     void measure(Node &node)
@@ -186,32 +205,45 @@ namespace
     void draw_box(Canvas &canvas, const Node &node, int box_left, int top)
     {
         const int box_w = box_width(node);
+        const int box_h = box_height(node);
         canvas.put(box_left, top, "┌", tc::blue);
         canvas.put(box_left + box_w - 1, top, "┐", tc::blue);
-        canvas.put(box_left, top + 2, "└", tc::blue);
-        canvas.put(box_left + box_w - 1, top + 2, "┘", tc::blue);
-        canvas.put(box_left, top + 1, "│", tc::blue);
-        canvas.put(box_left + box_w - 1, top + 1, "│", tc::blue);
+        canvas.put(box_left, top + box_h - 1, "└", tc::blue);
+        canvas.put(box_left + box_w - 1, top + box_h - 1, "┘", tc::blue);
         for (int x = box_left + 1; x < box_left + box_w - 1; ++x)
         {
             canvas.put(x, top, "─", tc::blue);
-            canvas.put(x, top + 2, "─", tc::blue);
+            canvas.put(x, top + box_h - 1, "─", tc::blue);
         }
-        const std::vector<std::string> glyphs = glyphs_of(node_label(node));
-        const std::size_t group_name_length = glyphs_of(node.name).size();
-        const bool no_omvs = node.omvs && !node.omvs->present;
-        for (std::size_t i = 0; i < glyphs.size(); ++i)
+        const std::vector<std::string> lines = node_lines(node);
+        for (std::size_t line_index = 0; line_index < lines.size(); ++line_index)
         {
-            const bool marker = no_omvs && i >= group_name_length + 2 && i < group_name_length + 9;
-            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, glyphs[i], marker ? tc::red : tc::cyan);
+            const auto glyphs = glyphs_of(lines[line_index]);
+            std::string_view color = tc::cyan;
+            if (lines[line_index] == "no OMVS")
+            {
+                color = tc::red;
+            }
+            else if (node.user_count && node.user_count.value() == 0 && line_index + 1 == lines.size())
+            {
+                color = tc::yellow;
+            }
+            const int row = top + 1 + static_cast<int>(line_index);
+            canvas.put(box_left, row, "│", tc::blue);
+            canvas.put(box_left + box_w - 1, row, "│", tc::blue);
+            for (std::size_t i = 0; i < glyphs.size(); ++i)
+            {
+                canvas.put(box_left + 2 + static_cast<int>(i), row, glyphs[i], color);
+            }
         }
     }
 
     // Draws the subtree into [origin, origin + node.width) and returns the box center column.
-    int place(const Node &node, int origin, int depth, Canvas &canvas)
+    int place(const Node &node, int origin, int depth, int level_step, Canvas &canvas)
     {
         const int box_w = box_width(node);
-        const int top = depth * rows_per_level;
+        const int box_h = box_height(node);
+        const int top = depth * level_step;
         int box_left;
 
         std::vector<int> child_centers;
@@ -229,7 +261,7 @@ namespace
             int x = origin + (node.width - children_width) / 2;
             for (const auto &child : node.children)
             {
-                child_centers.push_back(place(child, x, depth + 1, canvas));
+                child_centers.push_back(place(child, x, depth + 1, level_step, canvas));
                 x += child.width + sibling_gap;
             }
             const int mid = (child_centers.front() + child_centers.back()) / 2;
@@ -247,9 +279,10 @@ namespace
 
         if (!child_centers.empty())
         {
-            canvas.put(center, top + 2, "┬", tc::blue);
+            canvas.put(center, top + box_h - 1, "┬", tc::blue);
 
-            const int bus_row = top + 3;
+            const int bus_row = top + box_h;
+            const int child_top = (depth + 1) * level_step;
             const int bus_left = std::min(center, child_centers.front());
             const int bus_right = std::max(center, child_centers.back());
             for (int x = bus_left; x <= bus_right; ++x)
@@ -269,7 +302,10 @@ namespace
             for (int child_center : child_centers)
             {
                 canvas.line(child_center, bus_row, down);
-                canvas.line(child_center, bus_row + 1, up | down);
+                for (int row = bus_row + 1; row < child_top; ++row)
+                {
+                    canvas.line(child_center, row, up | down);
+                }
             }
         }
 
@@ -280,7 +316,7 @@ namespace
 
     int vertical_height(const Node &node)
     {
-        int height = 3;
+        int height = box_height(node);
         for (const auto &child : node.children)
         {
             height += vertical_height(child);
@@ -304,10 +340,10 @@ namespace
         draw_box(canvas, node, left_edge, top);
 
         const int spine = left_edge + 1;
-        int row = top + 3;
+        int row = top + box_height(node);
         if (!node.children.empty())
         {
-            canvas.put(spine, top + 2, "┬", tc::blue);
+            canvas.put(spine, top + box_height(node) - 1, "┬", tc::blue);
         }
         for (std::size_t i = 0; i < node.children.size(); ++i)
         {
@@ -735,8 +771,10 @@ int main(int argc, char *argv[])
             canvas.print(std::cout);
             continue;
         }
-        Canvas canvas(trees[i].width, tree_depth(trees[i]) * rows_per_level - 2);
-        place(trees[i], 0, 0, canvas);
+        const int level_step = max_box_height(trees[i]) + 2;
+        const int height = (tree_depth(trees[i]) - 1) * level_step + max_box_height(trees[i]);
+        Canvas canvas(trees[i].width, height);
+        place(trees[i], 0, 0, level_step, canvas);
         canvas.print(std::cout);
     }
 
