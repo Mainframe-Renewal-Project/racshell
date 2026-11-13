@@ -39,6 +39,7 @@ The following commands are currently implemented in `racshell/`.
 | `listgroup` | Group | Display RACF group details | `--users`, `--omvs`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
 | `searchgroups` | Group | Search RACF groups | `--filter`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `comparegroups` | Group | Compare two RACF groups | `--users`, `--omvs`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
+| `groupchart` | Group | Draw the group hierarchy as an org chart | `--levels`, `--width`, `--vertical`, `--omvs`, `--users`, `--json`, `--debug`, `--no-color` |
 | `adddataset` | Dataset | Create RACF dataset profile | `--generic`, `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `altdataset` | Dataset | Alter RACF dataset profile | `--generic`, `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deletedataset` | Dataset | Delete RACF dataset profile | `--generic`, `--json`, `--debug`, `--all-json`, `--no-color` |
@@ -445,6 +446,27 @@ Options:
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output differences as JSON
 - `-a, --all-json` output full raw SEAR JSON responses
+
+### groupchart
+
+Draw a RACF group hierarchy. Omit the root to show all top-level groups.
+
+Usage:
+
+`groupchart [root] [options]`
+
+Options:
+
+- `-l, --levels` maximum levels below the root (0 for unlimited)
+- `-w, --width` maximum chart width before switching to vertical layout (0 for terminal width)
+- `-v, --vertical` stack subgroups vertically
+- `-o, --omvs` show OMVS segment presence and GID for each group
+- `-u, --users` show connected user count for each group, capped at `100+`
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+
+With `--omvs` and `--users`, each requested detail appears on its own line below the group name. The OMVS line shows `no OMVS` or `OMVS GID=<gid>` (`?` if the GID is unavailable); the user line shows `users=N` or `users=100+`. JSON nodes include an `omvs` boolean and a `gid` number or `null` when `--omvs` is enabled, and `user_count` as a number or `100+` when `--users` is enabled.
 
 ### connect
 
