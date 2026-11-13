@@ -5,6 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -29,11 +30,18 @@ namespace
     constexpr int sibling_gap = 2;
     constexpr int rows_per_level = 5;
 
+    struct OmvsInfo
+    {
+        bool present = false;
+        nlohmann::json gid = nullptr;
+    };
+
     struct Node
     {
         std::string name;
         std::vector<Node> children;
         int width = 0;
+        std::optional<OmvsInfo> omvs;
     };
 
     struct Cell
@@ -124,9 +132,23 @@ namespace
         return glyphs;
     }
 
+    std::string node_label(const Node &node)
+    {
+        if (!node.omvs)
+        {
+            return node.name;
+        }
+        if (!node.omvs->present)
+        {
+            return node.name + " [no OMVS]";
+        }
+        return node.name + " [OMVS GID=" +
+               (node.omvs->gid.is_null() ? "?" : node.omvs->gid.dump()) + "]";
+    }
+
     int box_width(const Node &node)
     {
-        return static_cast<int>(glyphs_of(node.name).size()) + 4;
+        return static_cast<int>(glyphs_of(node_label(node)).size()) + 4;
     }
 
     int tree_depth(const Node &node)
@@ -168,7 +190,7 @@ namespace
             canvas.put(x, top, "─", tc::blue);
             canvas.put(x, top + 2, "─", tc::blue);
         }
-        const std::vector<std::string> glyphs = glyphs_of(node.name);
+        const std::vector<std::string> glyphs = glyphs_of(node_label(node));
         for (std::size_t i = 0; i < glyphs.size(); ++i)
         {
             canvas.put(box_left + 2 + static_cast<int>(i), top + 1, glyphs[i], tc::cyan);
@@ -323,11 +345,18 @@ namespace
         {
             children.push_back(to_json(child));
         }
-        return {{"group", node.name}, {"subgroups", children}};
+        nlohmann::json result = {{"group", node.name}, {"subgroups", children}};
+        if (node.omvs)
+        {
+            result["omvs"] = node.omvs->present;
+            result["gid"] = node.omvs->gid;
+        }
+        return result;
     }
 
     void build_subtree(Node &node,
                        const std::map<std::string, std::vector<std::string>> &children_of,
+                       const std::map<std::string, OmvsInfo> &omvs_by_group,
                        std::set<std::string> &visited,
                        int depth,
                        int max_depth)
@@ -349,9 +378,30 @@ namespace
             }
             Node child;
             child.name = name;
-            build_subtree(child, children_of, visited, depth + 1, max_depth);
+            const auto omvs = omvs_by_group.find(name);
+            if (omvs != omvs_by_group.end())
+            {
+                child.omvs = omvs->second;
+            }
+            build_subtree(child, children_of, omvs_by_group, visited, depth + 1, max_depth);
             node.children.push_back(std::move(child));
         }
+    }
+
+    OmvsInfo get_omvs_info(const nlohmann::json &profile)
+    {
+        OmvsInfo result;
+        const auto segment = profile.find("omvs");
+        if (segment != profile.end() && segment->is_object())
+        {
+            result.present = true;
+            const auto gid = segment->find("omvs:gid");
+            if (gid != segment->end() && gid->is_number_integer())
+            {
+                result.gid = *gid;
+            }
+        }
+        return result;
     }
 
     bool fetch_group_names(std::vector<std::string> &names, bool debug, std::string &error)
@@ -381,7 +431,8 @@ namespace
         return true;
     }
 
-    bool fetch_superior(const std::string &name, bool debug, std::string &superior, std::string &error)
+    bool fetch_superior(const std::string &name, bool debug, std::string &superior,
+                        OmvsInfo *omvs, std::string &error)
     {
         const std::string request = nlohmann::json{
             {"operation", "extract"},
@@ -398,13 +449,17 @@ namespace
         superior.clear();
         racshell::assign_string(info.base, "base:superior_group", superior);
         superior = racshell::from_racf_identifier_text(superior);
+        if (omvs)
+        {
+            *omvs = get_omvs_info(info.profile);
+        }
         return true;
     }
 
-    bool fetch_subtree(Node &node, bool debug, std::set<std::string> &visited,
+    bool fetch_subtree(Node &node, bool debug, bool show_omvs, std::set<std::string> &visited,
                        int depth, int max_depth, std::string &error)
     {
-        if (max_depth > 0 && depth >= max_depth)
+        if (!show_omvs && max_depth > 0 && depth >= max_depth)
         {
             return true;
         }
@@ -419,6 +474,15 @@ namespace
         {
             error = node.name + ": " + info.error_message;
             return false;
+        }
+
+        if (show_omvs)
+        {
+            node.omvs = get_omvs_info(info.profile);
+        }
+        if (max_depth > 0 && depth >= max_depth)
+        {
+            return true;
         }
 
         std::vector<std::string> names;
@@ -445,7 +509,7 @@ namespace
             }
             Node child;
             child.name = name;
-            if (!fetch_subtree(child, debug, visited, depth + 1, max_depth, error))
+            if (!fetch_subtree(child, debug, show_omvs, visited, depth + 1, max_depth, error))
             {
                 return false;
             }
@@ -475,6 +539,7 @@ int main(int argc, char *argv[])
         .default_value(0);
 
     racshell::add_toggle_argument(program, "-v", "--vertical", "stack subgroups vertically (automatic when the chart is wider than the terminal)");
+    racshell::add_toggle_argument(program, "-o", "--omvs", "show whether each group has an OMVS segment and its GID");
     racshell::add_no_color_argument(program);
     racshell::add_toggle_argument(program, "-d", "--debug", "debug sear request and response");
     racshell::add_toggle_argument(program, "-j", "--json", "output as JSON");
@@ -499,6 +564,7 @@ int main(int argc, char *argv[])
     const int levels = program.get<int>("levels");
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
+    const bool show_omvs = program.get<bool>("omvs");
     const bool force_vertical = program.get<bool>("vertical");
     const int max_width = program.get<int>("width") > 0 ? program.get<int>("width") : terminal_columns();
 
@@ -522,7 +588,7 @@ int main(int argc, char *argv[])
         Node root;
         root.name = root_name;
         visited.insert(root_name);
-        if (!fetch_subtree(root, debug, visited, 0, levels, error))
+        if (!fetch_subtree(root, debug, show_omvs, visited, 0, levels, error))
         {
             racshell::print_error(std::cerr, error);
             return 1;
@@ -540,14 +606,20 @@ int main(int argc, char *argv[])
 
         const std::set<std::string> known(groups.begin(), groups.end());
         std::map<std::string, std::vector<std::string>> children_of;
+        std::map<std::string, OmvsInfo> omvs_by_group;
         std::vector<std::string> roots;
         for (const auto &name : groups)
         {
             std::string superior;
-            if (!fetch_superior(name, debug, superior, error))
+            OmvsInfo omvs;
+            if (!fetch_superior(name, debug, superior, show_omvs ? &omvs : nullptr, error))
             {
                 racshell::print_error(std::cerr, error);
                 return 1;
+            }
+            if (show_omvs)
+            {
+                omvs_by_group.emplace(name, std::move(omvs));
             }
             if (superior.empty() || superior == name || known.find(superior) == known.end())
             {
@@ -577,7 +649,12 @@ int main(int argc, char *argv[])
             }
             Node root;
             root.name = name;
-            build_subtree(root, children_of, visited, 0, levels);
+            const auto omvs = omvs_by_group.find(name);
+            if (omvs != omvs_by_group.end())
+            {
+                root.omvs = omvs->second;
+            }
+            build_subtree(root, children_of, omvs_by_group, visited, 0, levels);
             trees.push_back(std::move(root));
         }
     }
