@@ -191,9 +191,12 @@ namespace
             canvas.put(x, top + 2, "─", tc::blue);
         }
         const std::vector<std::string> glyphs = glyphs_of(node_label(node));
+        const std::size_t group_name_length = glyphs_of(node.name).size();
+        const bool no_omvs = node.omvs && !node.omvs->present;
         for (std::size_t i = 0; i < glyphs.size(); ++i)
         {
-            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, glyphs[i], tc::cyan);
+            const bool marker = no_omvs && i >= group_name_length + 2 && i < group_name_length + 9;
+            canvas.put(box_left + 2 + static_cast<int>(i), top + 1, glyphs[i], marker ? tc::red : tc::cyan);
         }
     }
 
