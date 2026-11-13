@@ -39,7 +39,7 @@ The following commands are currently implemented in `racshell/`.
 | `listgroup` | Group | Display RACF group details | `--users`, `--omvs`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
 | `searchgroups` | Group | Search RACF groups | `--filter`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `comparegroups` | Group | Compare two RACF groups | `--users`, `--omvs`, `--csdata`, `--json`, `--all-json`, `--debug`, `--no-color` |
-| `groupchart` | Group | Draw the group hierarchy as an org chart | `--levels`, `--width`, `--vertical`, `--omvs`, `--json`, `--debug`, `--no-color` |
+| `groupchart` | Group | Draw the group hierarchy as an org chart | `--levels`, `--width`, `--vertical`, `--omvs`, `--users`, `--json`, `--debug`, `--no-color` |
 | `adddataset` | Dataset | Create RACF dataset profile | `--generic`, `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `altdataset` | Dataset | Alter RACF dataset profile | `--generic`, `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
 | `deletedataset` | Dataset | Delete RACF dataset profile | `--generic`, `--json`, `--debug`, `--all-json`, `--no-color` |
@@ -342,11 +342,12 @@ Options:
 - `-w, --width` maximum chart width before switching to vertical layout (0 for terminal width)
 - `-v, --vertical` stack subgroups vertically
 - `-o, --omvs` show OMVS segment presence and GID for each group
+- `-u, --users` show connected user count for each group, capped at `100+`
 - `-n, --no-color` disable colored output
 - `-d, --debug` debug SEAR request and response
 - `-j, --json` output as JSON
 
-With `--omvs`, chart boxes show `no OMVS`, or `OMVS GID=<gid>` (`?` if the GID is unavailable). JSON nodes include an `omvs` boolean and a `gid` number or `null`.
+With `--omvs`, chart boxes show `no OMVS`, or `OMVS GID=<gid>` (`?` if the GID is unavailable). JSON nodes include an `omvs` boolean and a `gid` number or `null`. With `--users`, boxes show `[users=N]`; JSON nodes include `user_count` as a number or `100+` when the count exceeds 100.
 
 ### connect
 

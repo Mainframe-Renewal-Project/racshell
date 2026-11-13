@@ -42,6 +42,7 @@ namespace
         std::vector<Node> children;
         int width = 0;
         std::optional<OmvsInfo> omvs;
+        std::optional<std::size_t> user_count;
     };
 
     struct Cell
@@ -134,16 +135,22 @@ namespace
 
     std::string node_label(const Node &node)
     {
-        if (!node.omvs)
+        std::string label = node.name;
+        if (node.omvs && !node.omvs->present)
         {
-            return node.name;
+            label += " [no OMVS]";
         }
-        if (!node.omvs->present)
+        else if (node.omvs)
         {
-            return node.name + " [no OMVS]";
+            label += " [OMVS GID=" +
+                     (node.omvs->gid.is_null() ? "?" : node.omvs->gid.dump()) + "]";
         }
-        return node.name + " [OMVS GID=" +
-               (node.omvs->gid.is_null() ? "?" : node.omvs->gid.dump()) + "]";
+        if (node.user_count)
+        {
+            label += " [users=" +
+                     (node.user_count.value() > 100 ? "100+" : std::to_string(node.user_count.value())) + "]";
+        }
+        return label;
     }
 
     int box_width(const Node &node)
@@ -354,12 +361,19 @@ namespace
             result["omvs"] = node.omvs->present;
             result["gid"] = node.omvs->gid;
         }
+        if (node.user_count)
+        {
+            result["user_count"] = node.user_count.value() > 100
+                                        ? nlohmann::json("100+")
+                                        : nlohmann::json(node.user_count.value());
+        }
         return result;
     }
 
     void build_subtree(Node &node,
                        const std::map<std::string, std::vector<std::string>> &children_of,
                        const std::map<std::string, OmvsInfo> &omvs_by_group,
+                       const std::map<std::string, std::size_t> &users_by_group,
                        std::set<std::string> &visited,
                        int depth,
                        int max_depth)
@@ -386,7 +400,12 @@ namespace
             {
                 child.omvs = omvs->second;
             }
-            build_subtree(child, children_of, omvs_by_group, visited, depth + 1, max_depth);
+            const auto users = users_by_group.find(name);
+            if (users != users_by_group.end())
+            {
+                child.user_count = users->second;
+            }
+            build_subtree(child, children_of, omvs_by_group, users_by_group, visited, depth + 1, max_depth);
             node.children.push_back(std::move(child));
         }
     }
@@ -405,6 +424,12 @@ namespace
             }
         }
         return result;
+    }
+
+    std::size_t get_user_count(const nlohmann::json &base)
+    {
+        const auto users = base.find("base:connected_users");
+        return users != base.end() && users->is_array() ? users->size() : 0;
     }
 
     bool fetch_group_names(std::vector<std::string> &names, bool debug, std::string &error)
@@ -435,7 +460,7 @@ namespace
     }
 
     bool fetch_superior(const std::string &name, bool debug, std::string &superior,
-                        OmvsInfo *omvs, std::string &error)
+                        OmvsInfo *omvs, std::size_t *user_count, std::string &error)
     {
         const std::string request = nlohmann::json{
             {"operation", "extract"},
@@ -456,13 +481,18 @@ namespace
         {
             *omvs = get_omvs_info(info.profile);
         }
+        if (user_count)
+        {
+            *user_count = get_user_count(info.base);
+        }
         return true;
     }
 
-    bool fetch_subtree(Node &node, bool debug, bool show_omvs, std::set<std::string> &visited,
+    bool fetch_subtree(Node &node, bool debug, bool show_omvs, bool show_users,
+                       std::set<std::string> &visited,
                        int depth, int max_depth, std::string &error)
     {
-        if (!show_omvs && max_depth > 0 && depth >= max_depth)
+        if (!show_omvs && !show_users && max_depth > 0 && depth >= max_depth)
         {
             return true;
         }
@@ -482,6 +512,10 @@ namespace
         if (show_omvs)
         {
             node.omvs = get_omvs_info(info.profile);
+        }
+        if (show_users)
+        {
+            node.user_count = get_user_count(info.base);
         }
         if (max_depth > 0 && depth >= max_depth)
         {
@@ -512,7 +546,7 @@ namespace
             }
             Node child;
             child.name = name;
-            if (!fetch_subtree(child, debug, show_omvs, visited, depth + 1, max_depth, error))
+            if (!fetch_subtree(child, debug, show_omvs, show_users, visited, depth + 1, max_depth, error))
             {
                 return false;
             }
@@ -543,6 +577,7 @@ int main(int argc, char *argv[])
 
     racshell::add_toggle_argument(program, "-v", "--vertical", "stack subgroups vertically (automatic when the chart is wider than the terminal)");
     racshell::add_toggle_argument(program, "-o", "--omvs", "show whether each group has an OMVS segment and its GID");
+    racshell::add_toggle_argument(program, "-u", "--users", "show connected user count for each group (capped at 100+)");
     racshell::add_no_color_argument(program);
     racshell::add_toggle_argument(program, "-d", "--debug", "debug sear request and response");
     racshell::add_toggle_argument(program, "-j", "--json", "output as JSON");
@@ -568,6 +603,7 @@ int main(int argc, char *argv[])
     const bool debug = program.get<bool>("debug");
     const bool json_output = program.get<bool>("json");
     const bool show_omvs = program.get<bool>("omvs");
+    const bool show_users = program.get<bool>("users");
     const bool force_vertical = program.get<bool>("vertical");
     const int max_width = program.get<int>("width") > 0 ? program.get<int>("width") : terminal_columns();
 
@@ -591,7 +627,7 @@ int main(int argc, char *argv[])
         Node root;
         root.name = root_name;
         visited.insert(root_name);
-        if (!fetch_subtree(root, debug, show_omvs, visited, 0, levels, error))
+        if (!fetch_subtree(root, debug, show_omvs, show_users, visited, 0, levels, error))
         {
             racshell::print_error(std::cerr, error);
             return 1;
@@ -610,12 +646,15 @@ int main(int argc, char *argv[])
         const std::set<std::string> known(groups.begin(), groups.end());
         std::map<std::string, std::vector<std::string>> children_of;
         std::map<std::string, OmvsInfo> omvs_by_group;
+        std::map<std::string, std::size_t> users_by_group;
         std::vector<std::string> roots;
         for (const auto &name : groups)
         {
             std::string superior;
             OmvsInfo omvs;
-            if (!fetch_superior(name, debug, superior, show_omvs ? &omvs : nullptr, error))
+            std::size_t user_count = 0;
+            if (!fetch_superior(name, debug, superior, show_omvs ? &omvs : nullptr,
+                                show_users ? &user_count : nullptr, error))
             {
                 racshell::print_error(std::cerr, error);
                 return 1;
@@ -623,6 +662,10 @@ int main(int argc, char *argv[])
             if (show_omvs)
             {
                 omvs_by_group.emplace(name, std::move(omvs));
+            }
+            if (show_users)
+            {
+                users_by_group.emplace(name, user_count);
             }
             if (superior.empty() || superior == name || known.find(superior) == known.end())
             {
@@ -657,7 +700,12 @@ int main(int argc, char *argv[])
             {
                 root.omvs = omvs->second;
             }
-            build_subtree(root, children_of, omvs_by_group, visited, 0, levels);
+            const auto users = users_by_group.find(name);
+            if (users != users_by_group.end())
+            {
+                root.user_count = users->second;
+            }
+            build_subtree(root, children_of, omvs_by_group, users_by_group, visited, 0, levels);
             trees.push_back(std::move(root));
         }
     }
