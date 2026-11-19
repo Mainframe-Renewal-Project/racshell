@@ -57,11 +57,18 @@ The following commands are currently implemented in `racshell/`.
 | `deletekeyring` | Keyring | Delete a RACF keyring | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `listkeyring` | Keyring | Display keyring and certificate details | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `racfctl` | System | Display or alter RACF system options (SETROPTS) | `list`, `modify`, `refresh`, `--json`, `--debug`, `--all-json`, `--no-color` |
+| `racfstats` | System | Summarize RACF database and configuration | `--json`, `--debug`, `--no-color` |
 | `rrsflist` | RRSF | Display RRSF configuration and nodes (read-only) | `--nodes`, `--settings`, `--json`, `--debug`, `--all-json`, `--no-color` |
 
 All commands accept `-n`, `--no-color`, or `--no-colour` to disable colored output.
 
 ## System Options
+
+### racfstats
+
+`racfstats [--json] [--debug] [--no-color]` displays a read-only overview of RACF settings, visible groups and CDT profiles, and the RRSF subsystem operator prefix. Password and passphrase settings that SEAR does not return are shown as unavailable (`null` in JSON); the attempts value is the shared RACF REVOKE setting when available. The prefix is the RRSF subsystem prefix, not a general TSO command prefix.
+
+Counts reflect profiles visible to the caller, not necessarily database totals. Each CDT profile is counted, which does not guarantee that it is an active custom class. SEAR searches can return partial results if an error occurs after profiles have been found, so counts should not be used as authoritative inventory totals. This command makes RACF options, RRSF, group search, and CDT resource search requests and requires the corresponding authorizations. A failed request leaves its values unavailable, includes an error, and causes a nonzero exit status while preserving the other results. Debug output can contain sensitive system information.
 
 ### racfctl
 
