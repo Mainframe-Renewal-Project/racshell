@@ -89,10 +89,35 @@ int main()
         assert(character < 0x80);
 
     requests.clear();
+    responses[1]["profile"]["base"]["base:nodes"] = nlohmann::json::array({
+        {{"base:node_name", "ACTIVE"}, {"base:node_state", 128}, {"base:is_local_node", true}},
+        {{"base:node_name", "REMOTE"}, {"base:node_state", 128}, {"base:is_local_node", false}}});
     assert(run_command({"racfstats"}, output) == 0);
     assert(output.find("\x1b[36mDATABASE\x1b[0m") != std::string::npos);
     assert(output.find("\x1b[36mPASSWORDS & PASSPHRASES\x1b[0m") != std::string::npos);
     assert(output.find("\x1b[36mOPERATIONS\x1b[0m") != std::string::npos);
     assert(output.find("\x1b[36mLOGGING\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[36mRRSF NODES\x1b[0m\n  \xe2\x94\x8c") != std::string::npos);
+    assert(output.find("ACTIVE  |  Operative active \xe2\x94\x82  \xe2\x86\x90 you are here") != std::string::npos);
+    assert(output.find("REMOTE  |  Operative active \xe2\x94\x82\n") != std::string::npos);
+
+    requests.clear();
+    auto &nodes = responses[1]["profile"]["base"]["base:nodes"] = nlohmann::json::array();
+    for (int index = 0; index < 11; ++index)
+        nodes.push_back({{"base:node_name", "NODE" + std::to_string(index)}, {"base:node_state", 128}, {"base:is_local_node", index == 10}});
+    assert(run_command({"racfstats"}, output) == 0);
+    assert(output.find("NODE10  |  Operative active \xe2\x94\x82  \xe2\x86\x90 you are here") != std::string::npos);
+    assert(output.find("NODE9  |") == std::string::npos);
+    assert(output.find("1 more nodes not shown") != std::string::npos);
+
+    requests.clear();
+    nodes[10]["base:node_state"] = 1;
+    assert(run_command({"racfstats"}, output) == 0);
+    assert(output.find("NODE10  |  Dormant error \xe2\x94\x82\x1b[0m  \xe2\x86\x90 you are here\x1b[31m") != std::string::npos);
+
+    requests.clear();
+    assert(run_command({"racfstats", "--no-colour"}, output) == 0);
+    assert(output.find("you are here") == std::string::npos);
+    assert(output.find("\x1b[") == std::string::npos);
     return 0;
 }

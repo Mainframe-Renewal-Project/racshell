@@ -92,10 +92,29 @@ namespace
         if (!rrsf.is_object() || !rrsf.contains("base:nodes") || !rrsf["base:nodes"].is_array() || rrsf["base:nodes"].empty())
             return;
         const auto &nodes = rrsf["base:nodes"];
-        std::cout << "\nRRSF NODES\n";
+        std::cout << "\n";
+        racshell::print_colored_text(std::cout, racshell::terminal_color::cyan, "RRSF NODES") << "\n";
+        const auto is_local = [](const json &node)
+        {
+            return node.is_object() && node.contains("base:is_local_node") && node["base:is_local_node"] == true;
+        };
+        std::size_t final_node = 9;
+        if (nodes.size() > 10)
+        {
+            bool local_in_first_ten = false;
+            for (std::size_t index = 0; index < 10; ++index)
+                local_in_first_ten = local_in_first_ten || is_local(nodes[index]);
+            if (!local_in_first_ten)
+                for (std::size_t index = 10; index < nodes.size(); ++index)
+                    if (is_local(nodes[index]))
+                    {
+                        final_node = index;
+                        break;
+                    }
+        }
         for (std::size_t index = 0; index < nodes.size() && index < 10; ++index)
         {
-            const auto &node = nodes[index];
+            const auto &node = nodes[index == 9 ? final_node : index];
             std::string name = node.is_object() && node.contains("base:node_name") && node["base:node_name"].is_string()
                 ? node["base:node_name"].get<std::string>() : "Unknown";
             while (!name.empty() && name.back() == ' ')
@@ -114,7 +133,16 @@ namespace
             std::cout << "  \xe2\x94\x8c";
             for (std::size_t width = 0; width < content.size() + 2; ++width)
                 std::cout << "\xe2\x94\x80";
-            std::cout << "\xe2\x94\x90\n  \xe2\x94\x82 " << content << " \xe2\x94\x82\n  \xe2\x94\x94";
+            std::cout << "\xe2\x94\x90\n  \xe2\x94\x82 " << content << " \xe2\x94\x82";
+            if (is_local(node))
+            {
+                if (!active)
+                    racshell::reset_color(std::cout);
+                std::cout << "  \xe2\x86\x90 you are here";
+                if (!active)
+                    racshell::colorize(std::cout, racshell::terminal_color::red);
+            }
+            std::cout << "\n  \xe2\x94\x94";
             for (std::size_t width = 0; width < content.size() + 2; ++width)
                 std::cout << "\xe2\x94\x80";
             std::cout << "\xe2\x94\x98";
