@@ -104,6 +104,23 @@ int main()
     assert(output.find("REMOTE  |  Operative active \xe2\x94\x82\n") != std::string::npos);
 
     requests.clear();
+    responses[1]["profile"]["base"]["base:nodes"].push_back(
+        {{"base:node_name", "LONGNODE"}, {"base:node_state", 32}});
+    assert(run_command({"racfoverview"}, output) == 0);
+    const std::string short_content = "ACTIVE  |  Operative active";
+    const std::string long_content = "LONGNODE  |  Operative pending verification";
+    const std::string padded_short = short_content + std::string(long_content.size() - short_content.size() + 1, ' ');
+    assert(output.find(padded_short + "\xe2\x94\x82  \xe2\x86\x90 you are here") != std::string::npos);
+    std::string top_border = "  \xe2\x94\x8c";
+    for (std::size_t width = 0; width < long_content.size() + 2; ++width)
+        top_border += "\xe2\x94\x80";
+    top_border += "\xe2\x94\x90";
+    const auto first_border = output.find(top_border);
+    const auto second_border = output.find(top_border, first_border + top_border.size());
+    assert(first_border != std::string::npos && second_border != std::string::npos);
+    assert(output.find(top_border, second_border + top_border.size()) != std::string::npos);
+
+    requests.clear();
     auto &nodes = responses[1]["profile"]["base"]["base:nodes"] = nlohmann::json::array();
     for (int index = 0; index < 11; ++index)
         nodes.push_back({{"base:node_name", "NODE" + std::to_string(index)}, {"base:node_state", 128}, {"base:is_local_node", index == 10}});
@@ -115,7 +132,7 @@ int main()
     requests.clear();
     nodes[10]["base:node_state"] = 1;
     assert(run_command({"racfoverview"}, output) == 0);
-    assert(output.find("NODE10  |  Dormant error \xe2\x94\x82\x1b[0m  \xe2\x86\x90 you are here\x1b[31m") != std::string::npos);
+    assert(output.find("NODE10  |  Dormant error   \xe2\x94\x82\x1b[0m  \xe2\x86\x90 you are here\x1b[31m") != std::string::npos);
 
     requests.clear();
     assert(run_command({"racfoverview", "--no-colour"}, output) == 0);

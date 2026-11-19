@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -112,6 +113,14 @@ namespace
                         break;
                     }
         }
+        struct NodeBox
+        {
+            std::string content;
+            bool active;
+            bool local;
+        };
+        std::vector<NodeBox> boxes;
+        std::size_t content_width = 0;
         for (std::size_t index = 0; index < nodes.size() && index < 10; ++index)
         {
             const auto &node = nodes[index == 9 ? final_node : index];
@@ -128,25 +137,31 @@ namespace
             const std::string content = name + "  |  " + state;
             const bool active = node.is_object() && node.contains("base:node_state") &&
                 node["base:node_state"].is_number_integer() && node["base:node_state"] == 128;
-            if (!active)
+            boxes.push_back({content, active, is_local(node)});
+            content_width = std::max(content_width, content.size());
+        }
+        for (const auto &box : boxes)
+        {
+            if (!box.active)
                 racshell::colorize(std::cout, racshell::terminal_color::red);
             std::cout << "  \xe2\x94\x8c";
-            for (std::size_t width = 0; width < content.size() + 2; ++width)
+            for (std::size_t width = 0; width < content_width + 2; ++width)
                 std::cout << "\xe2\x94\x80";
-            std::cout << "\xe2\x94\x90\n  \xe2\x94\x82 " << content << " \xe2\x94\x82";
-            if (is_local(node))
+            std::cout << "\xe2\x94\x90\n  \xe2\x94\x82 " << box.content
+                      << std::string(content_width - box.content.size() + 1, ' ') << "\xe2\x94\x82";
+            if (box.local)
             {
-                if (!active)
+                if (!box.active)
                     racshell::reset_color(std::cout);
                 std::cout << "  \xe2\x86\x90 you are here";
-                if (!active)
+                if (!box.active)
                     racshell::colorize(std::cout, racshell::terminal_color::red);
             }
             std::cout << "\n  \xe2\x94\x94";
-            for (std::size_t width = 0; width < content.size() + 2; ++width)
+            for (std::size_t width = 0; width < content_width + 2; ++width)
                 std::cout << "\xe2\x94\x80";
             std::cout << "\xe2\x94\x98";
-            if (!active)
+            if (!box.active)
                 racshell::reset_color(std::cout);
             std::cout << "\n";
         }
