@@ -157,7 +157,7 @@ namespace
 
 int main(int argc, char *argv[])
 {
-    argparse::ArgumentParser program("racfstats");
+    argparse::ArgumentParser program("racfoverview");
     program.add_description("Display a high-level RACF database and configuration overview.");
     racshell::add_no_color_argument(program);
     racshell::add_toggle_argument(program, "-d", "--debug", "debug SEAR requests and responses");

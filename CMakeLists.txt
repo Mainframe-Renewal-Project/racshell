@@ -150,14 +150,14 @@ target_link_libraries(listkeyring racshell -static)
 add_executable(racfctl "racshell/src/commands/racfctl/racfctl.cpp")
 target_link_libraries(racfctl racshell -static)
 
-add_executable(racfstats "racshell/src/commands/racfstats/racfstats.cpp")
-target_link_libraries(racfstats racshell -static)
+add_executable(racfoverview "racshell/src/commands/racfoverview/racfoverview.cpp")
+target_link_libraries(racfoverview racshell -static)
 
 if(SEAR_UNIT_TEST)
     enable_testing()
-    add_executable(racfstats_test "tests/racfstats_test.cpp")
-    target_link_libraries(racfstats_test racshell)
-    add_test(NAME racfstats_test COMMAND racfstats_test)
+    add_executable(racfoverview_test "tests/racfoverview_test.cpp")
+    target_link_libraries(racfoverview_test racshell)
+    add_test(NAME racfoverview_test COMMAND racfoverview_test)
 endif()
 
 add_executable(rrsflist "racshell/src/commands/rrsf/rrsflist.cpp")
@@ -167,7 +167,7 @@ add_custom_target(
     racshell_commands
     DEPENDS
     racfctl
-    racfstats
+    racfoverview
     rrsflist
     listuser
     searchusers

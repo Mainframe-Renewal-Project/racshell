@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#define main racfstats_main
-#include "../racshell/src/commands/racfstats/racfstats.cpp"
+#define main racfoverview_main
+#include "../racshell/src/commands/racfoverview/racfoverview.cpp"
 #undef main
 
 namespace
@@ -25,7 +25,7 @@ namespace
             argv.push_back(const_cast<char *>(argument));
         std::ostringstream stream;
         auto *previous = std::cout.rdbuf(stream.rdbuf());
-        const int status = racfstats_main(static_cast<int>(argv.size()), argv.data());
+        const int status = racfoverview_main(static_cast<int>(argv.size()), argv.data());
         std::cout.rdbuf(previous);
         output = stream.str();
         return status;
@@ -50,7 +50,7 @@ int main()
         {{"return_codes", success}, {"profiles", {"GROUP1", "GROUP2"}}},
         {{"return_codes", empty}, {"profiles", nlohmann::json::array()}}};
     std::string output;
-    assert(run_command({"racfstats", "--json"}, output) == 0);
+    assert(run_command({"racfoverview", "--json"}, output) == 0);
     const auto parsed = nlohmann::json::parse(output);
     assert(parsed["statistics"]["visible_groups"] == 2);
     assert(parsed["statistics"]["visible_cdt_profiles"] == 0);
@@ -72,7 +72,7 @@ int main()
 
     requests.clear();
     responses[2] = {{"return_codes", {{"sear_return_code", 4}, {"saf_return_code", 8}, {"racf_return_code", 8}, {"racf_reason_code", 0}}}};
-    assert(run_command({"racfstats", "--json"}, output) == 1);
+    assert(run_command({"racfoverview", "--json"}, output) == 1);
     const auto partial = nlohmann::json::parse(output);
     assert(partial["statistics"]["visible_groups"].is_null());
     assert(partial["statistics"]["visible_cdt_profiles"] == 0);
@@ -80,7 +80,7 @@ int main()
 
     requests.clear();
     responses[2] = {{"return_codes", success}, {"profiles", nlohmann::json::array()}};
-    assert(run_command({"racfstats", "--no-color"}, output) == 0);
+    assert(run_command({"racfoverview", "--no-color"}, output) == 0);
     assert(output.find("  | Visible groups:") != std::string::npos);
     assert(output.find("For all settings use commands such as rrsflist and racfctl list") != std::string::npos);
     assert(output.find("LOGGING") != std::string::npos);
@@ -92,7 +92,7 @@ int main()
     responses[1]["profile"]["base"]["base:nodes"] = nlohmann::json::array({
         {{"base:node_name", "ACTIVE"}, {"base:node_state", 128}, {"base:is_local_node", true}},
         {{"base:node_name", "REMOTE"}, {"base:node_state", 128}, {"base:is_local_node", false}}});
-    assert(run_command({"racfstats"}, output) == 0);
+    assert(run_command({"racfoverview"}, output) == 0);
     assert(output.find("\x1b[36mDATABASE\x1b[0m") != std::string::npos);
     assert(output.find("\x1b[36mPASSWORDS & PASSPHRASES\x1b[0m") != std::string::npos);
     assert(output.find("\x1b[36mOPERATIONS\x1b[0m") != std::string::npos);
@@ -105,18 +105,18 @@ int main()
     auto &nodes = responses[1]["profile"]["base"]["base:nodes"] = nlohmann::json::array();
     for (int index = 0; index < 11; ++index)
         nodes.push_back({{"base:node_name", "NODE" + std::to_string(index)}, {"base:node_state", 128}, {"base:is_local_node", index == 10}});
-    assert(run_command({"racfstats"}, output) == 0);
+    assert(run_command({"racfoverview"}, output) == 0);
     assert(output.find("NODE10  |  Operative active \xe2\x94\x82  \xe2\x86\x90 you are here") != std::string::npos);
     assert(output.find("NODE9  |") == std::string::npos);
     assert(output.find("1 more nodes not shown") != std::string::npos);
 
     requests.clear();
     nodes[10]["base:node_state"] = 1;
-    assert(run_command({"racfstats"}, output) == 0);
+    assert(run_command({"racfoverview"}, output) == 0);
     assert(output.find("NODE10  |  Dormant error \xe2\x94\x82\x1b[0m  \xe2\x86\x90 you are here\x1b[31m") != std::string::npos);
 
     requests.clear();
-    assert(run_command({"racfstats", "--no-colour"}, output) == 0);
+    assert(run_command({"racfoverview", "--no-colour"}, output) == 0);
     assert(output.find("you are here") == std::string::npos);
     assert(output.find("\x1b[") == std::string::npos);
     return 0;
