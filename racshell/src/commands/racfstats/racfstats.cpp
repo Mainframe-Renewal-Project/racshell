@@ -117,15 +117,23 @@ int main(int argc, char *argv[])
     stats["log_commands_issued_by_special_users"] = options.is_object() && options.contains("base:log_commands_issued_by_special_users") ? options["base:log_commands_issued_by_special_users"] : json(nullptr);
 
     json prefix;
+    json subsystem_userid;
+    json number_of_defined_nodes;
     json rrsf;
     if (extract_base("racf-rrsf", debug, rrsf, error))
     {
         if (rrsf.contains("base:subsystem_operator_prefix"))
             prefix = rrsf["base:subsystem_operator_prefix"];
+        if (rrsf.contains("base:subsystem_userid"))
+            subsystem_userid = rrsf["base:subsystem_userid"];
+        if (rrsf.contains("base:number_of_defined_nodes"))
+            number_of_defined_nodes = rrsf["base:number_of_defined_nodes"];
     }
     else
         errors["rrsf"] = error;
     stats["rrsf_operator_prefix"] = prefix;
+    stats["rrsf_subsystem_userid"] = subsystem_userid;
+    stats["rrsf_number_of_defined_nodes"] = number_of_defined_nodes;
 
     json groups;
     if (!count_profiles({{"operation", "search"}, {"admin_type", "group"}}, debug, groups, error))
@@ -172,6 +180,8 @@ int main(int argc, char *argv[])
         std::cout << "\n";
         print_heading("OPERATIONS", racshell::terminal_color::cyan);
         print_value("rrsf_operator_prefix", "RRSF operator command prefix");
+        print_value("rrsf_subsystem_userid", "RRSF subsystem userid");
+        print_value("rrsf_number_of_defined_nodes", "RRSF defined nodes");
         std::cout << "\n";
         print_heading("LOGGING", racshell::terminal_color::cyan);
         print_value("log_operator_actions", "Operator actions");

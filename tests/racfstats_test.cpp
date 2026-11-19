@@ -46,7 +46,7 @@ int main()
     const nlohmann::json empty = {{"sear_return_code", 0}, {"saf_return_code", 4}, {"racf_return_code", 4}, {"racf_reason_code", 4}};
     responses = {
         {{"return_codes", success}, {"profile", {{"base", {{"base:max_password_change_interval", 90}, {"base:max_incorrect_password_attempts", 5}, {"base:log_operator_actions", false}, {"base:log_commands_issued_by_special_users", true}, {"base:special_character_password_support", true}}}}}},
-        {{"return_codes", success}, {"profile", {{"base", {{"base:subsystem_operator_prefix", "RACF"}}}}}},
+        {{"return_codes", success}, {"profile", {{"base", {{"base:subsystem_operator_prefix", "RACF"}, {"base:subsystem_userid", "RACFUSER"}, {"base:number_of_defined_nodes", 3}}}}}},
         {{"return_codes", success}, {"profiles", {"GROUP1", "GROUP2"}}},
         {{"return_codes", empty}, {"profiles", nlohmann::json::array()}}};
     std::string output;
@@ -61,6 +61,8 @@ int main()
     assert(parsed["statistics"]["log_commands_issued_by_special_users"] == true);
     assert(parsed["statistics"]["passphrase_change_interval"].is_null());
     assert(parsed["statistics"]["rrsf_operator_prefix"] == "RACF");
+    assert(parsed["statistics"]["rrsf_subsystem_userid"] == "RACFUSER");
+    assert(parsed["statistics"]["rrsf_number_of_defined_nodes"] == 3);
     assert(parsed["errors"].empty());
     assert(requests.size() == 4);
     assert(requests[0]["admin_type"] == "racf-options");
