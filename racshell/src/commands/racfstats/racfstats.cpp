@@ -66,6 +66,65 @@ namespace
         count = response["profiles"].size();
         return true;
     }
+
+    std::string node_state(const json &node)
+    {
+        if (!node.is_object() || !node.contains("base:node_state") || !node["base:node_state"].is_number_integer())
+            return "Unknown";
+        switch (node["base:node_state"].get<int>())
+        {
+        case 0: return "Initial";
+        case 1: return "Dormant error";
+        case 2: return "Dormant both";
+        case 3: return "Defined";
+        case 4: return "Dormant remote";
+        case 8: return "Dormant local";
+        case 16: return "Operative error";
+        case 32: return "Operative pending verification";
+        case 64: return "Operative pending connection";
+        case 128: return "Operative active";
+        default: return "Unknown";
+        }
+    }
+
+    void print_node_boxes(const json &rrsf)
+    {
+        if (!rrsf.is_object() || !rrsf.contains("base:nodes") || !rrsf["base:nodes"].is_array() || rrsf["base:nodes"].empty())
+            return;
+        const auto &nodes = rrsf["base:nodes"];
+        std::cout << "\nRRSF NODES\n";
+        for (std::size_t index = 0; index < nodes.size() && index < 10; ++index)
+        {
+            const auto &node = nodes[index];
+            std::string name = node.is_object() && node.contains("base:node_name") && node["base:node_name"].is_string()
+                ? node["base:node_name"].get<std::string>() : "Unknown";
+            while (!name.empty() && name.back() == ' ')
+                name.pop_back();
+            for (char &character : name)
+                if (static_cast<unsigned char>(character) < 32 || static_cast<unsigned char>(character) > 126)
+                    character = '?';
+            if (name.empty())
+                name = "Unknown";
+            const std::string state = node_state(node);
+            const std::string content = name + "  |  " + state;
+            const bool active = node.is_object() && node.contains("base:node_state") &&
+                node["base:node_state"].is_number_integer() && node["base:node_state"] == 128;
+            if (!active)
+                racshell::colorize(std::cout, racshell::terminal_color::red);
+            std::cout << "  \xe2\x94\x8c";
+            for (std::size_t width = 0; width < content.size() + 2; ++width)
+                std::cout << "\xe2\x94\x80";
+            std::cout << "\xe2\x94\x90\n  \xe2\x94\x82 " << content << " \xe2\x94\x82\n  \xe2\x94\x94";
+            for (std::size_t width = 0; width < content.size() + 2; ++width)
+                std::cout << "\xe2\x94\x80";
+            std::cout << "\xe2\x94\x98";
+            if (!active)
+                racshell::reset_color(std::cout);
+            std::cout << "\n";
+        }
+        if (nodes.size() > 10)
+            std::cout << "  " << nodes.size() - 10 << " more nodes not shown\n";
+    }
 }
 
 int main(int argc, char *argv[])
@@ -183,6 +242,8 @@ int main(int argc, char *argv[])
         print_value("rrsf_operator_prefix", "RRSF operator command prefix");
         print_value("rrsf_subsystem_userid", "RRSF subsystem userid");
         print_value("rrsf_number_of_defined_nodes", "RRSF nodes defined");
+        if (color_enabled)
+            print_node_boxes(rrsf);
         std::cout << "\n";
         print_heading("LOGGING", racshell::terminal_color::cyan);
         print_value("log_operator_actions", "Operator actions");
