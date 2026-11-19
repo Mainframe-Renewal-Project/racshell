@@ -141,16 +141,18 @@ int main(int argc, char *argv[])
         std::cout << json({{"statistics", stats}, {"errors", errors}}).dump(2) << "\n";
     else
     {
+            const bool color_enabled = racshell::color_output_enabled();
         racshell::print_colored_text(std::cout, racshell::terminal_color::cyan, "RACF OVERVIEW");
-        std::cout << "\n\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\n\n";
+            std::cout << "\n" << (color_enabled ? "\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81" : "------------") << "\n\n";
         const auto print_heading = [](std::string_view title, std::string_view color)
         {
             racshell::print_colored_text(std::cout, color, title) << "\n";
         };
         const auto print_value = [&stats](const char *name, const char *label)
+            const auto print_value = [&stats, color_enabled](const char *name, const char *label)
         {
             const auto &value = stats[name];
-            std::cout << "  \xe2\x94\x82 " << label << ": ";
+                std::cout << (color_enabled ? "  \xe2\x94\x82 " : "  | ") << label << ": ";
             if (value.is_null())
                 std::cout << "Unavailable";
             else if (value.is_string())

@@ -79,9 +79,11 @@ int main()
     requests.clear();
     responses[2] = {{"return_codes", success}, {"profiles", nlohmann::json::array()}};
     assert(run_command({"racfstats", "--no-color"}, output) == 0);
-    assert(output.find("\xe2\x94\x82") != std::string::npos);
+    assert(output.find("  | Visible groups:") != std::string::npos);
     assert(output.find("LOGGING") != std::string::npos);
     assert(output.find("\x1b[") == std::string::npos);
+    for (const unsigned char character : output)
+        assert(character < 0x80);
 
     requests.clear();
     assert(run_command({"racfstats"}, output) == 0);
