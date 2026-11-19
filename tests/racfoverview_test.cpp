@@ -45,7 +45,7 @@ int main()
     const nlohmann::json success = {{"sear_return_code", 0}, {"saf_return_code", 0}, {"racf_return_code", 0}, {"racf_reason_code", 0}};
     const nlohmann::json empty = {{"sear_return_code", 0}, {"saf_return_code", 4}, {"racf_return_code", 4}, {"racf_reason_code", 4}};
     responses = {
-        {{"return_codes", success}, {"profile", {{"base", {{"base:max_password_change_interval", 90}, {"base:max_incorrect_password_attempts", 5}, {"base:log_operator_actions", false}, {"base:log_commands_issued_by_special_users", true}, {"base:special_character_password_support", true}}}}}},
+        {{"return_codes", success}, {"profile", {{"base", {{"base:max_password_change_interval", 90}, {"base:max_incorrect_password_attempts", 5}, {"base:log_operator_actions", false}, {"base:log_commands_issued_by_special_users", true}, {"base:special_character_password_support", true}, {"base:raclist", {"FACILITY", "CDT"}}}}}}},
         {{"return_codes", success}, {"profile", {{"base", {{"base:subsystem_operator_prefix", "RACF"}, {"base:subsystem_userid", "RACFUSER"}, {"base:number_of_defined_nodes", 3}}}}}},
         {{"return_codes", success}, {"profiles", {"GROUP1", "GROUP2"}}},
         {{"return_codes", empty}, {"profiles", nlohmann::json::array()}}};
@@ -54,6 +54,7 @@ int main()
     const auto parsed = nlohmann::json::parse(output);
     assert(parsed["statistics"]["visible_groups"] == 2);
     assert(parsed["statistics"]["visible_cdt_profiles"] == 0);
+    assert(parsed["statistics"]["raclisted_classes"] == 2);
     assert(parsed["statistics"]["max_password_change_interval"] == 90);
     assert(parsed["statistics"]["max_incorrect_password_attempts"] == 5);
     assert(parsed["statistics"]["special_character_password_support"] == true);
@@ -82,6 +83,7 @@ int main()
     responses[2] = {{"return_codes", success}, {"profiles", nlohmann::json::array()}};
     assert(run_command({"racfoverview", "--no-color"}, output) == 0);
     assert(output.find("  | Visible groups:") != std::string::npos);
+    assert(output.find("  | RACLISTed classes: 2") != std::string::npos);
     assert(output.find("For all settings use commands such as rrsflist and racfctl list") != std::string::npos);
     assert(output.find("LOGGING") != std::string::npos);
     assert(output.find("\x1b[") == std::string::npos);
@@ -119,5 +121,17 @@ int main()
     assert(run_command({"racfoverview", "--no-colour"}, output) == 0);
     assert(output.find("you are here") == std::string::npos);
     assert(output.find("\x1b[") == std::string::npos);
+    requests.clear();
+    responses[0]["profile"]["base"]["base:raclist"] = nlohmann::json::array();
+    assert(run_command({"racfoverview", "--json"}, output) == 0);
+    assert(nlohmann::json::parse(output)["statistics"]["raclisted_classes"] == 0);
+    requests.clear();
+    responses[0]["profile"]["base"].erase("base:raclist");
+    assert(run_command({"racfoverview", "--json"}, output) == 0);
+    assert(nlohmann::json::parse(output)["statistics"]["raclisted_classes"].is_null());
+    requests.clear();
+    responses[0]["profile"]["base"]["base:raclist"] = "invalid";
+    assert(run_command({"racfoverview", "--json"}, output) == 0);
+    assert(nlohmann::json::parse(output)["statistics"]["raclisted_classes"].is_null());
     return 0;
 }

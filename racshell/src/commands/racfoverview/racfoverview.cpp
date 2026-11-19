@@ -200,6 +200,8 @@ int main(int argc, char *argv[])
         {"password_encryption_algorithm", "base:password_encryption_algorithm", "Password encryption algorithm"}};
     for (const auto &field : fields)
         stats[field.name] = options.is_object() && options.contains(field.key) ? options[field.key] : json(nullptr);
+    stats["raclisted_classes"] = options.is_object() && options.contains("base:raclist") && options["base:raclist"].is_array()
+        ? json(options["base:raclist"].size()) : json(nullptr);
     stats["log_operator_actions"] = options.is_object() && options.contains("base:log_operator_actions") ? options["base:log_operator_actions"] : json(nullptr);
     stats["log_commands_issued_by_special_users"] = options.is_object() && options.contains("base:log_commands_issued_by_special_users") ? options["base:log_commands_issued_by_special_users"] : json(nullptr);
 
@@ -261,6 +263,7 @@ int main(int argc, char *argv[])
         print_heading("DATABASE", racshell::terminal_color::cyan);
         print_value("visible_groups", "Visible groups");
         print_value("visible_cdt_profiles", "Custom classes (CDT defined)");
+        print_value("raclisted_classes", "RACLISTed classes");
         std::cout << "\n";
         print_heading("PASSWORDS & PASSPHRASES", racshell::terminal_color::cyan);
         for (const auto &field : fields)

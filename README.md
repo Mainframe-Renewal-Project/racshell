@@ -66,7 +66,7 @@ All commands accept `-n`, `--no-color`, or `--no-colour` to disable colored outp
 
 ### racfoverview
 
-`racfoverview [--json] [--debug] [--no-color]` displays a read-only overview of RACF settings, visible groups and CDT profiles, and the RRSF subsystem operator prefix. Password and passphrase settings that SEAR does not return are shown as unavailable (`null` in JSON); the attempts value is the shared RACF REVOKE setting when available. The prefix is the RRSF subsystem prefix, not a general TSO command prefix.
+`racfoverview [--json] [--debug] [--no-color]` displays a read-only overview of RACF settings, visible groups and CDT profiles, the number of RACLISTed classes, and the RRSF subsystem operator prefix. Missing settings or a missing RACLIST class list are shown as unavailable (`null` in JSON); the attempts value is the shared RACF REVOKE setting when available. The prefix is the RRSF subsystem prefix, not a general TSO command prefix.
 
 The colored text view displays up to ten returned RRSF nodes in boxes, marking the local node with an arrow. When more than ten nodes are returned, the local node is included if available. Operative active nodes are uncolored; other or unknown states are red. Node boxes are omitted with `--no-color` or `--no-colour` and from JSON output.
 
