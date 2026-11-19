@@ -45,7 +45,7 @@ int main()
     const nlohmann::json success = {{"sear_return_code", 0}, {"saf_return_code", 0}, {"racf_return_code", 0}, {"racf_reason_code", 0}};
     const nlohmann::json empty = {{"sear_return_code", 0}, {"saf_return_code", 4}, {"racf_return_code", 4}, {"racf_reason_code", 4}};
     responses = {
-        {{"return_codes", success}, {"profile", {{"base", {{"base:max_password_change_interval", 90}, {"base:max_incorrect_password_attempts", 5}}}}}},
+        {{"return_codes", success}, {"profile", {{"base", {{"base:max_password_change_interval", 90}, {"base:max_incorrect_password_attempts", 5}, {"base:log_operator_actions", false}, {"base:log_commands_issued_by_special_users", true}, {"base:special_character_password_support", true}}}}}},
         {{"return_codes", success}, {"profile", {{"base", {{"base:subsystem_operator_prefix", "RACF"}}}}}},
         {{"return_codes", success}, {"profiles", {"GROUP1", "GROUP2"}}},
         {{"return_codes", empty}, {"profiles", nlohmann::json::array()}}};
@@ -56,6 +56,9 @@ int main()
     assert(parsed["statistics"]["visible_cdt_profiles"] == 0);
     assert(parsed["statistics"]["max_password_change_interval"] == 90);
     assert(parsed["statistics"]["max_incorrect_password_attempts"] == 5);
+    assert(parsed["statistics"]["special_character_password_support"] == true);
+    assert(parsed["statistics"]["log_operator_actions"] == false);
+    assert(parsed["statistics"]["log_commands_issued_by_special_users"] == true);
     assert(parsed["statistics"]["passphrase_change_interval"].is_null());
     assert(parsed["statistics"]["rrsf_operator_prefix"] == "RACF");
     assert(parsed["errors"].empty());
@@ -77,6 +80,14 @@ int main()
     responses[2] = {{"return_codes", success}, {"profiles", nlohmann::json::array()}};
     assert(run_command({"racfstats", "--no-color"}, output) == 0);
     assert(output.find("\xe2\x94\x82") != std::string::npos);
+    assert(output.find("LOGGING") != std::string::npos);
     assert(output.find("\x1b[") == std::string::npos);
+
+    requests.clear();
+    assert(run_command({"racfstats"}, output) == 0);
+    assert(output.find("\x1b[34mDATABASE\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[33mPASSWORDS & PASSPHRASES\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[32mOPERATIONS\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[35mLOGGING\x1b[0m") != std::string::npos);
     return 0;
 }
