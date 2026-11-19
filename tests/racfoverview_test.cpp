@@ -84,7 +84,7 @@ int main()
     assert(run_command({"racfoverview", "--no-color"}, output) == 0);
     assert(output.find("  | Visible groups:") != std::string::npos);
     assert(output.find("  | RACLISTed classes: 2") != std::string::npos);
-    assert(output.find("For all settings use commands such as rrsflist and racfctl list") != std::string::npos);
+    assert(output.find("To see all settings use commands such as rrsflist and racfctl list") != std::string::npos);
     assert(output.find("LOGGING") != std::string::npos);
     assert(output.find("\x1b[") == std::string::npos);
     for (const unsigned char character : output)

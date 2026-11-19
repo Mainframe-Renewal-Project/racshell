@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
     {
         const bool color_enabled = racshell::color_output_enabled();
         racshell::print_colored_text(std::cout, racshell::terminal_color::cyan, "RACF OVERVIEW");
-        std::cout << "\nFor all settings use commands such as rrsflist and racfctl list\n"
+        std::cout << "\nTo see all settings use commands such as rrsflist and racfctl list\n"
               << (color_enabled ? "\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81" : "------------") << "\n\n";
         const auto print_heading = [](std::string_view title, std::string_view color)
         {
