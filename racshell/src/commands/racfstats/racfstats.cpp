@@ -151,7 +151,8 @@ int main(int argc, char *argv[])
     {
         const bool color_enabled = racshell::color_output_enabled();
         racshell::print_colored_text(std::cout, racshell::terminal_color::cyan, "RACF OVERVIEW");
-        std::cout << "\n" << (color_enabled ? "\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81" : "------------") << "\n\n";
+        std::cout << "\nFor all settings use commands such as rrsflist and racfctl list\n"
+              << (color_enabled ? "\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81" : "------------") << "\n\n";
         const auto print_heading = [](std::string_view title, std::string_view color)
         {
             racshell::print_colored_text(std::cout, color, title) << "\n";
@@ -181,7 +182,7 @@ int main(int argc, char *argv[])
         print_heading("OPERATIONS", racshell::terminal_color::cyan);
         print_value("rrsf_operator_prefix", "RRSF operator command prefix");
         print_value("rrsf_subsystem_userid", "RRSF subsystem userid");
-        print_value("rrsf_number_of_defined_nodes", "RRSF defined nodes");
+        print_value("rrsf_number_of_defined_nodes", "RRSF nodes defined");
         std::cout << "\n";
         print_heading("LOGGING", racshell::terminal_color::cyan);
         print_value("log_operator_actions", "Operator actions");
