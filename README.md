@@ -29,6 +29,7 @@ The following commands are currently implemented in `racshell/`.
 | `compareusers` | User | Compare two RACF users | `--json`, `--all-json`, `--debug`, `--no-color` |
 | `resume` | User | Resume a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `revoke` | User | Revoke a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
+| `contain` | User | Contain a RACF user | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `resetpassword` | User | Reset RACF user password | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `resetpassphrase` | User | Reset RACF user passphrase | `--json`, `--debug`, `--all-json`, `--no-color` |
 | `addgroup` | Group | Create RACF group | `--traits`, `--json`, `--debug`, `--all-json`, `--no-color` |
@@ -303,6 +304,21 @@ Revoke a RACF user.
 Usage:
 
 `revoke <userid> [options]`
+
+Options:
+
+- `-n, --no-color` disable colored output
+- `-d, --debug` debug SEAR request and response
+- `-j, --json` output as JSON
+- `-a, --all-json` output full raw SEAR JSON response
+
+### contain
+
+Contain a RACF user by setting the SEAR trait `base:contain` to `true`. This is separate from revocation and requires z/OS 3.2 or later.
+
+Usage:
+
+`contain <userid> [options]`
 
 Options:
 

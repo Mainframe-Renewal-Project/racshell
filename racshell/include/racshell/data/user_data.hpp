@@ -1,6 +1,7 @@
 #ifndef USER_DATA_HPP
 #define USER_DATA_HPP
 
+#include <optional>
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
@@ -23,6 +24,7 @@ struct UserData
     bool auditor = false;
     bool read_only_auditor = false;
     bool revoked = false;
+    std::optional<bool> contained;
     bool password_expired = false;
     bool has_passphrase = false;
     bool has_password = false;
