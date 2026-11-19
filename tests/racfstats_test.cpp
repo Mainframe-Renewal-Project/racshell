@@ -87,9 +87,9 @@ int main()
 
     requests.clear();
     assert(run_command({"racfstats"}, output) == 0);
-    assert(output.find("\x1b[34mDATABASE\x1b[0m") != std::string::npos);
-    assert(output.find("\x1b[33mPASSWORDS & PASSPHRASES\x1b[0m") != std::string::npos);
-    assert(output.find("\x1b[32mOPERATIONS\x1b[0m") != std::string::npos);
-    assert(output.find("\x1b[35mLOGGING\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[36mDATABASE\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[36mPASSWORDS & PASSPHRASES\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[36mOPERATIONS\x1b[0m") != std::string::npos);
+    assert(output.find("\x1b[36mLOGGING\x1b[0m") != std::string::npos);
     return 0;
 }
