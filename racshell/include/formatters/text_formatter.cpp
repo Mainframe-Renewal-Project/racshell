@@ -46,6 +46,13 @@ namespace
         racshell::print_colored_text(ss, racshell::terminal_color::text, label);
     }
 
+    void append_boolean_field(std::stringstream &ss, std::string_view label, bool value)
+    {
+        append_label(ss, label);
+        append_boolean(ss, value);
+        ss << "\n";
+    }
+
     template <typename T>
     void append_styled_value(std::stringstream &ss, const T &value)
     {
@@ -423,49 +430,25 @@ std::string TextFormatter::format(const UserData &user)
     append_field(ss, "Created: ", user.created_date);
     append_field(ss, "Last access date: ", user.last_access_date);
     append_field(ss, "Last access time: ", user.last_access_time);
-    append_label(ss, "Protected: ");
-    append_boolean(ss, user.protected_user);
-    ss << "\n";
-    append_label(ss, "Restricted: ");
-    append_boolean(ss, user.restrict_global_access_checking);
-    ss << "\n";
-    append_label(ss, "Special: ");
-    append_boolean(ss, user.special);
-    ss << "\n";
-    append_label(ss, "Operations: ");
-    append_boolean(ss, user.operations);
-    ss << "\n";
-    append_label(ss, "Auditor: ");
-    append_boolean(ss, user.auditor);
-    ss << "\n";
-    append_label(ss, "Read-only auditor: ");
-    append_boolean(ss, user.read_only_auditor);
-    ss << "\n";
-    append_label(ss, "Revoked: ");
-    append_boolean(ss, user.revoked);
-    ss << "\n";
+    append_boolean_field(ss, "Protected: ", user.protected_user);
+    append_boolean_field(ss, "Restricted: ", user.restrict_global_access_checking);
+    append_boolean_field(ss, "Special: ", user.special);
+    append_boolean_field(ss, "Operations: ", user.operations);
+    append_boolean_field(ss, "Auditor: ", user.auditor);
+    append_boolean_field(ss, "Read-only auditor: ", user.read_only_auditor);
+    append_boolean_field(ss, "Revoked: ", user.revoked);
     if (!user.revoke_date.empty())
     {
         append_field(ss, "Revoke date: ", user.revoke_date);
     }
     if (user.contained.has_value())
     {
-        append_label(ss, "Contained: ");
-        append_boolean(ss, *user.contained);
-        ss << "\n";
+        append_boolean_field(ss, "Contained: ", *user.contained);
     }
-    append_label(ss, "Password expired: ");
-    append_boolean(ss, user.password_expired);
-    ss << "\n";
-    append_label(ss, "Has passphrase: ");
-    append_boolean(ss, user.has_passphrase);
-    ss << "\n";
-    append_label(ss, "Has password: ");
-    append_boolean(ss, user.has_password);
-    ss << "\n";
-    append_label(ss, "MFA active: ");
-    append_boolean(ss, user.mfa_active);
-    ss << "\n";
+    append_boolean_field(ss, "Password expired: ", user.password_expired);
+    append_boolean_field(ss, "Has passphrase: ", user.has_passphrase);
+    append_boolean_field(ss, "Has password: ", user.has_password);
+    append_boolean_field(ss, "MFA active: ", user.mfa_active);
 
     if (user.passphrase_change_date.has_value())
     {
@@ -534,9 +517,7 @@ std::string TextFormatter::format(const GroupData &group)
     append_field(ss, "Owner: ", group.owner);
     append_field(ss, "Created: ", group.created_date);
     append_field(ss, "Superior group: ", group.superior_group);
-    append_label(ss, "Universal: ");
-    append_boolean(ss, group.universal);
-    ss << "\n";
+    append_boolean_field(ss, "Universal: ", group.universal);
 
     if (!group.installation_data.empty())
     {
@@ -577,9 +558,7 @@ std::string TextFormatter::format(const DatasetData &dataset)
     append_field(ss, "Dataset: ", dataset.dataset);
     append_field(ss, "Owner: ", dataset.owner);
     append_field(ss, "UACC: ", dataset.uacc);
-    append_label(ss, "Audited: ");
-    append_boolean(ss, dataset.audited);
-    ss << "\n";
+    append_boolean_field(ss, "Audited: ", dataset.audited);
 
     if (dataset.access_count > 0)
     {

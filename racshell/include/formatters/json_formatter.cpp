@@ -136,16 +136,6 @@ std::string JsonFormatter::format(const DatasetData &dataset)
     output["audited"] = dataset.audited;
     output["access_count"] = dataset.access_count;
 
-    if (!dataset.access_list.empty())
-    {
-        nlohmann::json access_array = nlohmann::json::array();
-        for (const auto &entry : dataset.access_list)
-        {
-            access_array.push_back({{"access_type", entry.access_type}, {"access_id", entry.access_id}});
-        }
-        output["access_list"] = access_array;
-    }
-
     add_if_present(output, dataset.csdata, "csdata");
     add_access_list_to_json(output, dataset.access_list);
 
@@ -160,16 +150,6 @@ std::string JsonFormatter::format(const ResourceData &resource)
     output["class"] = resource.resource_class;
     output["owner"] = resource.owner;
     output["universal_access"] = resource.uacc;
-
-    if (!resource.access_list.empty())
-    {
-        nlohmann::json access_array = nlohmann::json::array();
-        for (const auto &entry : resource.access_list)
-        {
-            access_array.push_back({{"access_type", entry.access_type}, {"access_id", entry.access_id}});
-        }
-        output["access_list"] = access_array;
-    }
 
     add_if_present(output, resource.csdata, "csdata");
     add_access_list_to_json(output, resource.access_list);
