@@ -182,6 +182,12 @@ namespace
         ss << "\n";
     }
 
+    void append_main_heading(std::stringstream &ss, std::string_view heading)
+    {
+        racshell::print_colored_text(ss, racshell::terminal_color::cyan, heading);
+        ss << "\n\n";
+    }
+
     void append_csdata(std::stringstream &ss, const nlohmann::json &csdata)
     {
         if (!csdata.is_null() && !csdata.empty())
@@ -283,8 +289,7 @@ namespace
 std::string TextFormatter::format(const RrsfData &rrsf)
 {
     std::stringstream ss;
-    racshell::print_colored_text(ss, racshell::terminal_color::cyan, "RRSF configuration");
-    ss << "\n";
+    append_main_heading(ss, "RRSF configuration");
     const auto &base = rrsf.profile.at("base");
     for (const auto &field : base.items())
     {
@@ -318,8 +323,7 @@ std::string TextFormatter::format(const RrsfData &rrsf)
 std::string TextFormatter::format(const RacfOptionsData &options)
 {
     std::stringstream ss;
-    racshell::print_colored_text(ss, racshell::terminal_color::cyan, "RACF system options");
-    ss << "\n";
+    append_main_heading(ss, "RACF system options");
     const std::array<std::string, 6> headings = {
         "General", "Password policy", "Auditing", "Security labels", "JES", "Classes"};
     std::array<nlohmann::json, 6> sections;
@@ -410,6 +414,7 @@ std::string TextFormatter::format(const UserData &user)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF user");
     append_field(ss, "User: ", user.userid);
     append_field(ss, "Name: ", user.name);
     append_field(ss, "Installation data: ", user.installation_data);
@@ -524,6 +529,7 @@ std::string TextFormatter::format(const GroupData &group)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF group");
     append_field(ss, "Group: ", group.groupid);
     append_field(ss, "Owner: ", group.owner);
     append_field(ss, "Created: ", group.created_date);
@@ -567,6 +573,7 @@ std::string TextFormatter::format(const DatasetData &dataset)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF dataset");
     append_field(ss, "Dataset: ", dataset.dataset);
     append_field(ss, "Owner: ", dataset.owner);
     append_field(ss, "UACC: ", dataset.uacc);
@@ -590,6 +597,7 @@ std::string TextFormatter::format(const ResourceData &resource)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF resource");
     append_field(ss, "Resource: ", resource.resource);
     append_field(ss, "Class: ", resource.resource_class);
     append_field(ss, "Owner: ", resource.owner);
