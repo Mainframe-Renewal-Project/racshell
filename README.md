@@ -817,3 +817,11 @@ cmake --build --preset zos --target racshell_commands
 ```
 
 After compilation the commands can be found in the build output directory specified by the CMake preset (./build/zos/).
+
+## Limitations
+
+The list of known limitations:
+
+- RACSHELL does not have onlyat or at command argument equivalents (RRSF), this is because of a limitation in SEAR which itelf is caused by the RACF callable services not exposing this functionality.
+- RACSHELL does not support idimap or racmap commands, this is because SEAR doesn't support those features, this will likely change in a future version.
+- RACSHELL does not have a gencert command equivalent, we refer to the TSO command `gencert`, OpenSSL commands or PyCA for that. This is caused by an underlying limitation in SEAR.
