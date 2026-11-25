@@ -36,8 +36,13 @@ namespace
     void append_boolean(std::stringstream &ss, bool value)
     {
         racshell::print_colored_text(ss,
-                                     value ? racshell::terminal_color::green : racshell::terminal_color::red,
+                                     value ? racshell::terminal_color::yes : racshell::terminal_color::no,
                                      value ? "YES" : "NO");
+    }
+
+    void append_label(std::stringstream &ss, std::string_view label)
+    {
+        racshell::print_colored_text(ss, racshell::terminal_color::text, label);
     }
 
     template <typename T>
@@ -45,7 +50,7 @@ namespace
     {
         std::stringstream value_stream;
         value_stream << value;
-        racshell::print_colored_text(ss, racshell::terminal_color::blue, value_stream.str());
+        racshell::print_colored_text(ss, racshell::terminal_color::value, value_stream.str());
     }
 
     void append_styled_value(std::stringstream &ss, const nlohmann::json &value)
@@ -67,7 +72,7 @@ namespace
     template <typename T>
     void append_field(std::stringstream &ss, std::string_view label, const T &value)
     {
-        ss << label;
+        append_label(ss, label);
         append_styled_value(ss, value);
         ss << "\n";
     }
@@ -84,7 +89,9 @@ namespace
         {
             for (const auto &field : value.items())
             {
-                ss << padding << format_security_key(field.key()) << ":";
+                ss << padding;
+                append_label(ss, format_security_key(field.key()));
+                ss << ":";
                 if (field.value().is_structured() && !field.value().empty())
                 {
                     ss << "\n";
@@ -105,7 +112,9 @@ namespace
         {
             for (std::size_t index = 0; index < value.size(); ++index)
             {
-                ss << padding << "Entry " << index + 1 << ":";
+                ss << padding;
+                append_label(ss, "Entry " + std::to_string(index + 1));
+                ss << ":";
                 if (value[index].is_structured())
                 {
                     ss << "\n";
@@ -164,7 +173,8 @@ namespace
     {
         if (!access_list.empty())
         {
-            ss << "Access List:\n";
+            racshell::print_colored_text(ss, racshell::terminal_color::heading, "Access List:");
+            ss << "\n";
             for (const auto &entry : access_list)
             {
                 ss << "  ";
@@ -182,7 +192,8 @@ namespace
 
     void print_user_list(std::stringstream &ss, const std::string &heading, const nlohmann::json &users)
     {
-        ss << heading << "\n";
+        append_label(ss, heading);
+        ss << "\n";
         for (const auto &user : users)
         {
             ss << "    ";
@@ -195,7 +206,8 @@ namespace
 
     void print_group_list(std::stringstream &ss, const std::string &heading, const nlohmann::json &groups)
     {
-        ss << heading << "\n";
+        append_label(ss, heading);
+        ss << "\n";
         for (const auto &group : groups)
         {
             ss << "    ";
@@ -214,15 +226,15 @@ namespace
         ss << "  ";
         const bool segment_label = label == "tso" || label == "kerberos" ||
                        label == "cics" || label == "omvs" || label == "csdata";
-        racshell::colorize(ss, segment_label ? racshell::terminal_color::cyan : racshell::terminal_color::gray) << label;
+        racshell::colorize(ss, segment_label ? racshell::terminal_color::heading : racshell::terminal_color::text) << label;
         racshell::reset_color(ss) << ": ";
 
-        racshell::colorize(ss, racshell::terminal_color::magenta) << left_groupid;
+        racshell::colorize(ss, racshell::terminal_color::value) << left_groupid;
         racshell::reset_color(ss) << "='";
         append_comparison_value_text(ss, difference.contains("left") ? difference["left"] : nlohmann::json());
         ss << "', ";
 
-        racshell::colorize(ss, racshell::terminal_color::cyan) << right_groupid;
+        racshell::colorize(ss, racshell::terminal_color::value) << right_groupid;
         racshell::reset_color(ss) << "='";
         append_comparison_value_text(ss, difference.contains("right") ? difference["right"] : nlohmann::json());
         ss << "'\n";
@@ -307,7 +319,9 @@ std::string TextFormatter::format(const RacfOptionsData &options)
         for (const auto &option : sections[section].items())
         {
             const std::string label = option.key() == "base:raclist" ? "RACLIST classes" : format_security_key(option.key());
-            ss << "  " << label << ":";
+            ss << "  ";
+            append_label(ss, label);
+            ss << ":";
             if (section != 5)
             {
                 ss << " ";
@@ -369,25 +383,25 @@ std::string TextFormatter::format(const UserData &user)
     append_field(ss, "Created: ", user.created_date);
     append_field(ss, "Last access date: ", user.last_access_date);
     append_field(ss, "Last access time: ", user.last_access_time);
-    ss << "Protected: ";
+    append_label(ss, "Protected: ");
     append_boolean(ss, user.protected_user);
     ss << "\n";
-    ss << "Restricted: ";
+    append_label(ss, "Restricted: ");
     append_boolean(ss, user.restrict_global_access_checking);
     ss << "\n";
-    ss << "Special: ";
+    append_label(ss, "Special: ");
     append_boolean(ss, user.special);
     ss << "\n";
-    ss << "Operations: ";
+    append_label(ss, "Operations: ");
     append_boolean(ss, user.operations);
     ss << "\n";
-    ss << "Auditor: ";
+    append_label(ss, "Auditor: ");
     append_boolean(ss, user.auditor);
     ss << "\n";
-    ss << "Read-only auditor: ";
+    append_label(ss, "Read-only auditor: ");
     append_boolean(ss, user.read_only_auditor);
     ss << "\n";
-    ss << "Revoked: ";
+    append_label(ss, "Revoked: ");
     append_boolean(ss, user.revoked);
     ss << "\n";
     if (!user.revoke_date.empty())
@@ -396,26 +410,27 @@ std::string TextFormatter::format(const UserData &user)
     }
     if (user.contained.has_value())
     {
-        ss << "Contained: ";
+        append_label(ss, "Contained: ");
         append_boolean(ss, *user.contained);
         ss << "\n";
     }
-    ss << "Password expired: ";
+    append_label(ss, "Password expired: ");
     append_boolean(ss, user.password_expired);
     ss << "\n";
-    ss << "Has passphrase: ";
+    append_label(ss, "Has passphrase: ");
     append_boolean(ss, user.has_passphrase);
     ss << "\n";
-    ss << "Has password: ";
+    append_label(ss, "Has password: ");
     append_boolean(ss, user.has_password);
     ss << "\n";
-    ss << "MFA active: ";
+    append_label(ss, "MFA active: ");
     append_boolean(ss, user.mfa_active);
     ss << "\n";
 
     if (!user.groups.empty())
     {
-        ss << "Groups:\n";
+        append_label(ss, "Groups:");
+        ss << "\n";
         for (const auto &group : user.groups)
         {
             ss << "  ";
@@ -428,7 +443,8 @@ std::string TextFormatter::format(const UserData &user)
     {
         for (auto it = user.security.begin(); it != user.security.end(); ++it)
         {
-            ss << format_security_key(it.key()) << ": ";
+            append_label(ss, format_security_key(it.key()));
+            ss << ": ";
             append_json_value(ss, it.value());
             ss << "\n";
         }
@@ -493,7 +509,7 @@ std::string TextFormatter::format(const GroupData &group)
     append_field(ss, "Owner: ", group.owner);
     append_field(ss, "Created: ", group.created_date);
     append_field(ss, "Superior group: ", group.superior_group);
-    ss << "Universal: ";
+    append_label(ss, "Universal: ");
     append_boolean(ss, group.universal);
     ss << "\n";
 
@@ -504,7 +520,8 @@ std::string TextFormatter::format(const GroupData &group)
 
     if (!group.connected_users.empty())
     {
-        ss << "Users:\n";
+        append_label(ss, "Users:");
+        ss << "\n";
         for (const auto &connected_user : group.connected_users)
         {
                 ss << "  ";
@@ -536,7 +553,7 @@ std::string TextFormatter::format(const DatasetData &dataset)
     append_field(ss, "Dataset: ", dataset.dataset);
     append_field(ss, "Owner: ", dataset.owner);
     append_field(ss, "UACC: ", dataset.uacc);
-    ss << "Audited: ";
+    append_label(ss, "Audited: ");
     append_boolean(ss, dataset.audited);
     ss << "\n";
 
@@ -579,12 +596,14 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
 
     if (comparison.raw_json_output)
     {
-        ss << "Left response:\n";
+        racshell::print_colored_text(ss, racshell::terminal_color::heading, "Left response:");
+        ss << "\n";
         ss << (!comparison.left.response_json.is_null() && !comparison.left.response_json.empty()
                    ? comparison.left.response_json.dump(2)
                    : comparison.left.raw_response_json)
            << "\n";
-        ss << "Right response:\n";
+        racshell::print_colored_text(ss, racshell::terminal_color::heading, "Right response:");
+        ss << "\n";
         ss << (!comparison.right.response_json.is_null() && !comparison.right.response_json.empty()
                    ? comparison.right.response_json.dump(2)
                    : comparison.right.raw_response_json)
@@ -611,7 +630,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             const nlohmann::json &users = it.value();
             if (users.contains("only_in_left"))
             {
-                racshell::colorize(ss, racshell::terminal_color::magenta) << "  Users only in " << comparison.left.groupid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::heading) << "  Users only in " << comparison.left.groupid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &user : users["only_in_left"])
                 {
@@ -624,7 +643,7 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             }
             if (users.contains("only_in_right"))
             {
-                racshell::colorize(ss, racshell::terminal_color::cyan) << "  Users only in " << comparison.right.groupid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::heading) << "  Users only in " << comparison.right.groupid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &user : users["only_in_right"])
                 {
@@ -643,11 +662,11 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
                     ss << "    ";
                     append_styled_value(ss, mismatch.value("userid", ""));
                     ss << ": ";
-                    racshell::colorize(ss, racshell::terminal_color::magenta) << comparison.left.groupid;
+                    racshell::colorize(ss, racshell::terminal_color::value) << comparison.left.groupid;
                     racshell::reset_color(ss) << "='";
                     append_styled_value(ss, mismatch.value("left", ""));
                     ss << "', ";
-                    racshell::colorize(ss, racshell::terminal_color::cyan) << comparison.right.groupid;
+                    racshell::colorize(ss, racshell::terminal_color::value) << comparison.right.groupid;
                     racshell::reset_color(ss) << "='";
                     append_styled_value(ss, mismatch.value("right", ""));
                     ss << "'\n";
@@ -672,12 +691,14 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
 
     if (comparison.raw_json_output)
     {
-        ss << "Left response:\n";
+        racshell::print_colored_text(ss, racshell::terminal_color::heading, "Left response:");
+        ss << "\n";
         ss << (!comparison.left.response_json.is_null() && !comparison.left.response_json.empty()
                    ? comparison.left.response_json.dump(2)
                    : comparison.left.raw_response_json)
            << "\n";
-        ss << "Right response:\n";
+        racshell::print_colored_text(ss, racshell::terminal_color::heading, "Right response:");
+        ss << "\n";
         ss << (!comparison.right.response_json.is_null() && !comparison.right.response_json.empty()
                    ? comparison.right.response_json.dump(2)
                    : comparison.right.raw_response_json)
@@ -727,7 +748,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             const nlohmann::json &groups = difference;
             if (groups.contains("only_in_left") && groups["only_in_left"].is_array() && !groups["only_in_left"].empty())
             {
-                racshell::colorize(ss, racshell::terminal_color::magenta) << "    Groups only in " << comparison.left.userid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::heading) << "    Groups only in " << comparison.left.userid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &group : groups["only_in_left"])
                 {
@@ -738,7 +759,7 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             }
             if (groups.contains("only_in_right") && groups["only_in_right"].is_array() && !groups["only_in_right"].empty())
             {
-                racshell::colorize(ss, racshell::terminal_color::cyan) << "    Groups only in " << comparison.right.userid << ":\n";
+                racshell::colorize(ss, racshell::terminal_color::heading) << "    Groups only in " << comparison.right.userid << ":\n";
                 racshell::reset_color(ss);
                 for (const auto &group : groups["only_in_right"])
                 {

@@ -111,40 +111,46 @@ namespace racshell
          */
         inline constexpr std::string_view reset = "\x1b[0m";
 
+        inline constexpr std::string_view text = "\x1b[38;2;204;204;204m";
+        inline constexpr std::string_view heading = "\x1b[38;2;0;230;214m";
+        inline constexpr std::string_view value = "\x1b[38;2;255;255;255m";
+        inline constexpr std::string_view yes = "\x1b[38;2;0;209;3m";
+        inline constexpr std::string_view no = "\x1b[38;2;255;51;51m";
+
         /**
          * @brief ANSI red foreground sequence.
          */
-        inline constexpr std::string_view red = "\x1b[31m";
+        inline constexpr std::string_view red = no;
 
         /**
          * @brief ANSI green foreground sequence.
          */
-        inline constexpr std::string_view green = "\x1b[32m";
+        inline constexpr std::string_view green = yes;
 
         /**
          * @brief ANSI yellow foreground sequence.
          */
-        inline constexpr std::string_view yellow = "\x1b[33m";
+        inline constexpr std::string_view yellow = text;
 
         /**
          * @brief ANSI blue foreground sequence.
          */
-        inline constexpr std::string_view blue = "\x1b[34m";
+        inline constexpr std::string_view blue = value;
 
         /**
          * @brief ANSI magenta foreground sequence.
          */
-        inline constexpr std::string_view magenta = "\x1b[35m";
+        inline constexpr std::string_view magenta = text;
 
         /**
          * @brief ANSI cyan foreground sequence.
          */
-        inline constexpr std::string_view cyan = "\x1b[36m";
+        inline constexpr std::string_view cyan = heading;
 
         /**
          * @brief ANSI bright black (gray) foreground sequence.
          */
-        inline constexpr std::string_view gray = "\x1b[90m";
+        inline constexpr std::string_view gray = text;
 
     } // namespace terminal_color
 
