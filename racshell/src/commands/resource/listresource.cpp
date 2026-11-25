@@ -99,18 +99,18 @@ int main(int argc, char *argv[])
         resource_data.csdata = sear_info.profile["csdata"];
     }
 
-    if (access && sear_info.profile.contains("access_list") && sear_info.profile["access_list"].is_array())
+    if (access && sear_info.base.contains("base:access_list") && sear_info.base["base:access_list"].is_array())
     {
-        for (const auto &entry : sear_info.profile["access_list"])
+        for (const auto &entry : sear_info.base["base:access_list"])
         {
             AccessEntry access_entry;
-            if (entry.contains("access_type"))
+            if (entry.contains("base:access_type") && entry["base:access_type"].is_string())
             {
-                access_entry.access_type = entry["access_type"];
+                access_entry.access_type = entry["base:access_type"].get<std::string>();
             }
-            if (entry.contains("access_id"))
+            if (entry.contains("base:access_id") && entry["base:access_id"].is_string())
             {
-                access_entry.access_id = racshell::from_racf_identifier_text(entry["access_id"]);
+                access_entry.access_id = racshell::from_racf_identifier_text(entry["base:access_id"].get<std::string>());
             }
             resource_data.access_list.push_back(access_entry);
         }
