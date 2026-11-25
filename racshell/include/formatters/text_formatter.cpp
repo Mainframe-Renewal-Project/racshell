@@ -35,9 +35,10 @@ namespace
 
     void append_boolean(std::stringstream &ss, bool value)
     {
+        const char *text = value && racshell::color_output_enabled() ? u8"YES \u2713" : value ? "YES" : "NO";
         racshell::print_colored_text(ss,
                                      value ? racshell::terminal_color::yes : racshell::terminal_color::no,
-                                     value ? "YES" : "NO");
+                                     text);
     }
 
     void append_label(std::stringstream &ss, std::string_view label)
