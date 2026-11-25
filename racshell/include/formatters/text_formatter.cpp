@@ -214,12 +214,19 @@ namespace
             {
                 const auto &entry = access_list[index];
                 ss << tree_branch(index + 1 == access_list.size());
-                append_styled_value(ss, entry.access_type);
                 if (!entry.access_id.empty())
                 {
-                    ss << " (";
                     append_styled_value(ss, entry.access_id);
-                    ss << ")";
+                    if (!entry.access_type.empty())
+                    {
+                        ss << " [";
+                        append_styled_value(ss, entry.access_type);
+                        ss << "]";
+                    }
+                }
+                else
+                {
+                    append_styled_value(ss, entry.access_type);
                 }
                 ss << "\n";
             }
@@ -533,9 +540,9 @@ std::string TextFormatter::format(const GroupData &group)
             const auto &connected_user = group.connected_users[index];
             ss << tree_branch(index + 1 == group.connected_users.size());
             append_styled_value(ss, connected_user.userid);
-            ss << " (";
+            ss << " [";
             append_styled_value(ss, connected_user.authority);
-            ss << ")\n";
+            ss << "]\n";
         }
     }
 
