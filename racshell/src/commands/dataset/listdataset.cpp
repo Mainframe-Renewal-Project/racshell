@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 
     racshell::add_toggle_argument(program, "-g", "--generic", "treat the dataset name as a generic profile");
     racshell::add_toggle_argument(program, "-x", "--csdata", "list CSDATA segment");
+    racshell::add_toggle_argument(program, "-l", "--access", "list access control list");
     racshell::add_no_color_argument(program);
     racshell::add_toggle_argument(program, "-d", "--debug", "debug sear request and response");
     racshell::add_toggle_argument(program, "-j", "--json", "output as JSON");
@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
     const bool json_output = program.get<bool>("json");
     const bool all_json = program.get<bool>("all-json");
     const bool csdata = program.get<bool>("csdata");
+    const bool access = program.get<bool>("access");
 
     nlohmann::json request = {
         {"operation", "extract"},
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
         dataset_data.access_count = base["base:access_count"].get<int>();
     }
 
-    if (base.contains("base:access_list") && base["base:access_list"].is_array())
+    if (access && base.contains("base:access_list") && base["base:access_list"].is_array())
     {
         const auto &access_list = base["base:access_list"];
         for (const auto &entry : access_list)
