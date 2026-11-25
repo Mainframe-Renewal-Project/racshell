@@ -62,6 +62,9 @@ target_link_libraries(resume racshell -static)
 add_executable(revoke "racshell/src/commands/user/revoke.cpp")
 target_link_libraries(revoke racshell -static)
 
+add_executable(contain "racshell/src/commands/user/contain.cpp")
+target_link_libraries(contain racshell -static)
+
 add_executable(resetpassword "racshell/src/commands/user/resetpassword.cpp")
 target_link_libraries(resetpassword racshell -static)
 
@@ -86,6 +89,9 @@ target_link_libraries(searchgroups racshell -static)
 
 add_executable(comparegroups "racshell/src/commands/group/comparegroups.cpp")
 target_link_libraries(comparegroups racshell -static)
+
+add_executable(groupchart "racshell/src/commands/group/groupchart.cpp")
+target_link_libraries(groupchart racshell -static)
 
 add_executable(connect "racshell/src/commands/group/connect.cpp")
 target_link_libraries(connect racshell -static)
@@ -163,11 +169,13 @@ add_custom_target(
     compareusers
     resume
     revoke
+    contain
     resetpassword
     resetpassphrase
     listgroup
     searchgroups
     comparegroups
+    groupchart
     adduser
     addgroup
     deleteuser

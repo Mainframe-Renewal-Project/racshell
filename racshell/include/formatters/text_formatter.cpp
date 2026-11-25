@@ -394,6 +394,12 @@ std::string TextFormatter::format(const UserData &user)
     {
         append_field(ss, "Revoke date: ", user.revoke_date);
     }
+    if (user.contained.has_value())
+    {
+        ss << "Contained: ";
+        append_boolean(ss, *user.contained);
+        ss << "\n";
+    }
     ss << "Password expired: ";
     append_boolean(ss, user.password_expired);
     ss << "\n";

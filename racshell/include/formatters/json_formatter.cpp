@@ -58,6 +58,10 @@ std::string JsonFormatter::format(const UserData &user)
     output["auditor"] = user.auditor;
     output["read_only_auditor"] = user.read_only_auditor;
     output["revoked"] = user.revoked;
+    if (user.contained.has_value())
+    {
+        output["contained"] = *user.contained;
+    }
     output["password_expired"] = user.password_expired;
     output["has_passphrase"] = user.has_passphrase;
     output["has_password"] = user.has_password;

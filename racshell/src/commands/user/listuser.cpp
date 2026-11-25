@@ -107,6 +107,11 @@ int main(int argc, char *argv[])
         racshell::assign_string(base, "base:last_access_time", user_data.last_access_time);
         racshell::assign_string(base, "base:revoke_date", user_data.revoke_date);
         racshell::assign_bool(base, "base:revoked", user_data.revoked);
+        const auto contain = base.find("base:contain");
+        if (contain != base.end() && contain->is_boolean())
+        {
+            user_data.contained = contain->get<bool>();
+        }
         racshell::assign_bool(base, "base:password_expired", user_data.password_expired);
         racshell::assign_bool(base, "base:has_passphrase", user_data.has_passphrase);
         racshell::assign_bool(base, "base:has_password", user_data.has_password);
