@@ -57,6 +57,9 @@ namespace
     const char *const junction_glyphs[16] = {
         " ", "│", "│", "│", "─", "┘", "┐", "┤",
         "─", "└", "┌", "├", "─", "┴", "┬", "┼"};
+    const char *const ascii_junction_glyphs[16] = {
+        " ", "|", "|", "|", "-", "+", "+", "+",
+        "-", "+", "+", "+", "+", "+", "+", "+"};
 
     class Canvas
     {
@@ -73,8 +76,10 @@ namespace
         {
             Cell &cell = cells_[y][x];
             cell.bits |= bits;
-            cell.glyph = junction_glyphs[cell.bits];
-            cell.color = tc::gray;
+            cell.glyph = racshell::color_output_enabled()
+                             ? junction_glyphs[cell.bits]
+                             : ascii_junction_glyphs[cell.bits];
+            cell.color = tc::text;
         }
 
         void print(std::ostream &out) const
@@ -206,31 +211,28 @@ namespace
     {
         const int box_w = box_width(node);
         const int box_h = box_height(node);
-        canvas.put(box_left, top, "┌", tc::blue);
-        canvas.put(box_left + box_w - 1, top, "┐", tc::blue);
-        canvas.put(box_left, top + box_h - 1, "└", tc::blue);
-        canvas.put(box_left + box_w - 1, top + box_h - 1, "┘", tc::blue);
+        const bool unicode = racshell::color_output_enabled();
+        canvas.put(box_left, top, unicode ? "┌" : "+", tc::text);
+        canvas.put(box_left + box_w - 1, top, unicode ? "┐" : "+", tc::text);
+        canvas.put(box_left, top + box_h - 1, unicode ? "└" : "+", tc::text);
+        canvas.put(box_left + box_w - 1, top + box_h - 1, unicode ? "┘" : "+", tc::text);
         for (int x = box_left + 1; x < box_left + box_w - 1; ++x)
         {
-            canvas.put(x, top, "─", tc::blue);
-            canvas.put(x, top + box_h - 1, "─", tc::blue);
+            canvas.put(x, top, unicode ? "─" : "-", tc::text);
+            canvas.put(x, top + box_h - 1, unicode ? "─" : "-", tc::text);
         }
         const std::vector<std::string> lines = node_lines(node);
         for (std::size_t line_index = 0; line_index < lines.size(); ++line_index)
         {
             const auto glyphs = glyphs_of(lines[line_index]);
-            std::string_view color = tc::cyan;
+            std::string_view color = tc::value;
             if (lines[line_index] == "no OMVS")
             {
                 color = tc::red;
             }
-            else if (node.user_count && node.user_count.value() == 0 && line_index + 1 == lines.size())
-            {
-                color = tc::yellow;
-            }
             const int row = top + 1 + static_cast<int>(line_index);
-            canvas.put(box_left, row, "│", tc::blue);
-            canvas.put(box_left + box_w - 1, row, "│", tc::blue);
+            canvas.put(box_left, row, unicode ? "│" : "|", tc::text);
+            canvas.put(box_left + box_w - 1, row, unicode ? "│" : "|", tc::text);
             for (std::size_t i = 0; i < glyphs.size(); ++i)
             {
                 canvas.put(box_left + 2 + static_cast<int>(i), row, glyphs[i], color);
@@ -274,12 +276,12 @@ namespace
 
         if (depth > 0)
         {
-            canvas.put(center, top, "┴", tc::blue);
+            canvas.put(center, top, racshell::color_output_enabled() ? "┴" : "+", tc::text);
         }
 
         if (!child_centers.empty())
         {
-            canvas.put(center, top + box_h - 1, "┬", tc::blue);
+            canvas.put(center, top + box_h - 1, racshell::color_output_enabled() ? "┬" : "+", tc::text);
 
             const int bus_row = top + box_h;
             const int child_top = (depth + 1) * level_step;
@@ -343,7 +345,7 @@ namespace
         int row = top + box_height(node);
         if (!node.children.empty())
         {
-            canvas.put(spine, top + box_height(node) - 1, "┬", tc::blue);
+            canvas.put(spine, top + box_height(node) - 1, racshell::color_output_enabled() ? "┬" : "+", tc::text);
         }
         for (std::size_t i = 0; i < node.children.size(); ++i)
         {
@@ -366,7 +368,7 @@ namespace
             canvas.line(spine + 1, row + 1, left | right);
 
             place_vertical(node.children[i], left_edge + indent_step, row, canvas);
-            canvas.put(left_edge + indent_step, row + 1, "┤", tc::blue);
+            canvas.put(left_edge + indent_step, row + 1, racshell::color_output_enabled() ? "┤" : "+", tc::text);
             row += child_rows;
         }
     }
