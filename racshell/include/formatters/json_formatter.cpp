@@ -67,22 +67,28 @@ std::string JsonFormatter::format(const UserData &user)
     output["has_passphrase"] = user.has_passphrase;
     output["has_password"] = user.has_password;
     output["mfa_active"] = user.mfa_active;
+    if (user.passphrase_change_date.has_value())
+    {
+        output["passphrase_change_date"] = *user.passphrase_change_date;
+    }
+    if (user.passphrase_change_interval.has_value())
+    {
+        output["passphrase_change_interval"] = *user.passphrase_change_interval;
+    }
+    if (user.password_change_date.has_value())
+    {
+        output["password_change_date"] = *user.password_change_date;
+    }
+    if (user.password_change_interval.has_value())
+    {
+        output["password_change_interval"] = *user.password_change_interval;
+    }
 
     if (!user.groups.empty())
     {
         output["groups"] = user.groups;
     }
 
-    if (user.security.is_object())
-    {
-        for (const auto &field : user.security.items())
-        {
-            const std::string key = field.key().rfind("base:", 0) == 0
-                                        ? field.key().substr(5)
-                                        : field.key();
-            output[key] = field.value();
-        }
-    }
     add_if_present(output, user.tso, "tso");
     add_if_present(output, user.omvs, "omvs");
     add_if_present(output, user.kerberos, "kerberos");

@@ -462,30 +462,21 @@ std::string TextFormatter::format(const UserData &user)
     append_boolean(ss, user.mfa_active);
     ss << "\n";
 
-    if (!user.security.is_null() && !user.security.empty())
+    if (user.passphrase_change_date.has_value())
     {
-        const std::array<std::string_view, 4> security_keys = {
-            "base:passphrase_change_date",
-            "base:passphrase_change_interval",
-            "base:password_change_date",
-            "base:password_change_interval"};
-        const auto security_count = std::count_if(security_keys.begin(), security_keys.end(), [&](const auto key)
-                                                  { return user.security.contains(std::string(key)); });
-        std::size_t security_index = 0;
-        for (const auto key : security_keys)
-        {
-            const auto field = user.security.find(std::string(key));
-            if (field == user.security.end())
-            {
-                continue;
-            }
-
-            ss << tree_branch(++security_index == security_count);
-            append_label(ss, format_security_key(std::string(key)));
-            ss << ": ";
-            append_styled_value(ss, field.value());
-            ss << "\n";
-        }
+        append_field(ss, "Passphrase change date: ", *user.passphrase_change_date);
+    }
+    if (user.passphrase_change_interval.has_value())
+    {
+        append_field(ss, "Passphrase change interval: ", *user.passphrase_change_interval);
+    }
+    if (user.password_change_date.has_value())
+    {
+        append_field(ss, "Password change date: ", *user.password_change_date);
+    }
+    if (user.password_change_interval.has_value())
+    {
+        append_field(ss, "Password change interval: ", *user.password_change_interval);
     }
 
     if (!user.groups.empty())

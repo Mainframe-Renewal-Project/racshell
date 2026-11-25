@@ -117,21 +117,25 @@ int main(int argc, char *argv[])
         racshell::assign_bool(base, "base:has_password", user_data.has_password);
         racshell::assign_bool(base, "base:mfa_active", user_data.mfa_active);
 
-        user_data.security = nlohmann::json::object();
-
-        const std::vector<std::string> base_security_keys = {
-            "base:passphrase_change_date",
-            "base:passphrase_change_interval",
-            "base:password_change_date",
-            "base:password_change_interval"};
-
-        for (const auto &key : base_security_keys)
+        const auto passphrase_change_date = base.find("base:passphrase_change_date");
+        if (passphrase_change_date != base.end() && passphrase_change_date->is_string())
         {
-            const auto element = base.find(key);
-            if (element != base.end())
-            {
-                user_data.security[key] = *element;
-            }
+            user_data.passphrase_change_date = passphrase_change_date->get<std::string>();
+        }
+        const auto passphrase_change_interval = base.find("base:passphrase_change_interval");
+        if (passphrase_change_interval != base.end() && passphrase_change_interval->is_number_integer())
+        {
+            user_data.passphrase_change_interval = passphrase_change_interval->get<int>();
+        }
+        const auto password_change_date = base.find("base:password_change_date");
+        if (password_change_date != base.end() && password_change_date->is_string())
+        {
+            user_data.password_change_date = password_change_date->get<std::string>();
+        }
+        const auto password_change_interval = base.find("base:password_change_interval");
+        if (password_change_interval != base.end() && password_change_interval->is_number_integer())
+        {
+            user_data.password_change_interval = password_change_interval->get<int>();
         }
 
         if (groups && base.contains("base:group_connections"))
