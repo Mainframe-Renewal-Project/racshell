@@ -78,25 +78,41 @@ namespace
         ss << "\n";
     }
 
-    void append_json_value(std::stringstream &ss, const nlohmann::json &value)
+    std::string_view tree_branch(bool last)
     {
-        append_styled_value(ss, value);
+        if (!racshell::color_output_enabled())
+            return last ? "\\-- " : "|-- ";
+        return last ? "└─ " : "├─ ";
     }
 
-    void append_rrsf_fields(std::stringstream &ss, const nlohmann::json &value, std::size_t indent)
+    std::string_view tree_continuation()
     {
-        const std::string padding(indent, ' ');
+        return racshell::color_output_enabled() ? "│  " : "|  ";
+    }
+
+    void append_tree_json(std::stringstream &ss, const nlohmann::json &value, const std::string &prefix = {})
+    {
+        if (value.is_null() || (value.is_structured() && value.empty()))
+        {
+            ss << prefix << tree_branch(true);
+            append_styled_value(ss, "None");
+            ss << "\n";
+            return;
+        }
+
         if (value.is_object())
         {
+            std::size_t index = 0;
             for (const auto &field : value.items())
             {
-                ss << padding;
+                const bool last = ++index == value.size();
+                ss << prefix << tree_branch(last);
                 append_label(ss, format_security_key(field.key()));
                 ss << ":";
                 if (field.value().is_structured() && !field.value().empty())
                 {
                     ss << "\n";
-                    append_rrsf_fields(ss, field.value(), indent + 2);
+                    append_tree_json(ss, field.value(), prefix + (last ? "   " : std::string(tree_continuation())));
                 }
                 else
                 {
@@ -113,21 +129,31 @@ namespace
         {
             for (std::size_t index = 0; index < value.size(); ++index)
             {
-                ss << padding;
+                const bool last = index + 1 == value.size();
+                ss << prefix << tree_branch(last);
                 append_label(ss, "Entry " + std::to_string(index + 1));
                 ss << ":";
-                if (value[index].is_structured())
+                if (value[index].is_structured() && !value[index].empty())
                 {
                     ss << "\n";
-                    append_rrsf_fields(ss, value[index], indent + 2);
+                    append_tree_json(ss, value[index], prefix + (last ? "   " : std::string(tree_continuation())));
                 }
                 else
                 {
                     ss << " ";
-                    append_styled_value(ss, value[index]);
+                    if (value[index].is_structured())
+                        append_styled_value(ss, "None");
+                    else
+                        append_styled_value(ss, value[index]);
                     ss << "\n";
                 }
             }
+        }
+        else
+        {
+            ss << prefix << tree_branch(true);
+            append_styled_value(ss, value);
+            ss << "\n";
         }
     }
 
@@ -161,12 +187,7 @@ namespace
         if (!csdata.is_null() && !csdata.empty())
         {
             append_segment_heading(ss, "CSDATA");
-            for (auto it = csdata.begin(); it != csdata.end(); ++it)
-            {
-                ss << "  " << format_security_key(it.key()) << ": ";
-                append_json_value(ss, it.value());
-                ss << "\n";
-            }
+            append_tree_json(ss, csdata);
         }
     }
 
@@ -176,9 +197,10 @@ namespace
         {
             racshell::print_colored_text(ss, racshell::terminal_color::heading, "Access List:");
             ss << "\n";
-            for (const auto &entry : access_list)
+            for (std::size_t index = 0; index < access_list.size(); ++index)
             {
-                ss << "  ";
+                const auto &entry = access_list[index];
+                ss << tree_branch(index + 1 == access_list.size());
                 append_styled_value(ss, entry.access_type);
                 if (!entry.access_id.empty())
                 {
@@ -195,9 +217,10 @@ namespace
     {
         append_label(ss, heading);
         ss << "\n";
-        for (const auto &user : users)
+        for (std::size_t index = 0; index < users.size(); ++index)
         {
-            ss << "    ";
+            const auto &user = users[index];
+            ss << tree_branch(index + 1 == users.size());
             append_styled_value(ss, user.value("userid", ""));
             ss << " (";
             append_styled_value(ss, user.value("authority", ""));
@@ -209,9 +232,10 @@ namespace
     {
         append_label(ss, heading);
         ss << "\n";
-        for (const auto &group : groups)
+        for (std::size_t index = 0; index < groups.size(); ++index)
         {
-            ss << "    ";
+            const auto &group = groups[index];
+            ss << tree_branch(index + 1 == groups.size());
             append_styled_value(ss, racshell::value_to_text(group));
             ss << "\n";
         }
@@ -228,17 +252,30 @@ namespace
         const bool segment_label = label == "tso" || label == "kerberos" ||
                        label == "cics" || label == "omvs" || label == "csdata";
         racshell::colorize(ss, segment_label ? racshell::terminal_color::heading : racshell::terminal_color::text) << label;
-        racshell::reset_color(ss) << ": ";
+        racshell::reset_color(ss) << ":\n";
 
-        racshell::colorize(ss, racshell::terminal_color::value) << left_groupid;
-        racshell::reset_color(ss) << "='";
-        append_comparison_value_text(ss, difference.contains("left") ? difference["left"] : nlohmann::json());
-        ss << "', ";
+        const nlohmann::json left_value = difference.contains("left") ? difference["left"] : nlohmann::json();
+        const nlohmann::json right_value = difference.contains("right") ? difference["right"] : nlohmann::json();
+        const auto append_side = [&](const std::string &groupid, const nlohmann::json &value, bool left)
+        {
+            ss << "    " << tree_branch(!left);
+            racshell::colorize(ss, racshell::terminal_color::value) << groupid;
+            racshell::reset_color(ss) << ":";
+            if (value.is_structured() && !value.empty())
+            {
+                ss << "\n";
+                append_tree_json(ss, value, left ? "    " + std::string(tree_continuation()) : "       ");
+            }
+            else
+            {
+                ss << " ";
+                append_comparison_value_text(ss, value);
+                ss << "\n";
+            }
+        };
 
-        racshell::colorize(ss, racshell::terminal_color::value) << right_groupid;
-        racshell::reset_color(ss) << "='";
-        append_comparison_value_text(ss, difference.contains("right") ? difference["right"] : nlohmann::json());
-        ss << "'\n";
+        append_side(left_groupid, left_value, true);
+        append_side(right_groupid, right_value, false);
     }
 
 } // namespace
@@ -259,23 +296,20 @@ std::string TextFormatter::format(const RrsfData &rrsf)
         if (!field.value().is_structured() || field.key() == "base:nodes")
             continue;
         append_segment_heading(ss, format_security_key(field.key()));
-        if (field.value().empty())
-            append_field(ss, "  ", "None");
-        else
-            append_rrsf_fields(ss, field.value(), 2);
+        append_tree_json(ss, field.value());
     }
     const auto nodes = base.find("base:nodes");
     if (nodes == base.end() || nodes->empty())
     {
         append_segment_heading(ss, "Nodes");
-        append_field(ss, "  ", "None");
+        append_tree_json(ss, nlohmann::json());
     }
     else if (nodes->is_array())
     {
         for (std::size_t index = 0; index < nodes->size(); ++index)
         {
             append_segment_heading(ss, "Node " + std::to_string(index + 1));
-            append_rrsf_fields(ss, (*nodes)[index], 2);
+            append_tree_json(ss, (*nodes)[index]);
         }
     }
     return ss.str();
@@ -317,10 +351,14 @@ std::string TextFormatter::format(const RacfOptionsData &options)
         if (sections[section].empty())
             continue;
         append_segment_heading(ss, headings[section]);
+        std::size_t option_index = 0;
         for (const auto &option : sections[section].items())
         {
+            const bool last_option = ++option_index == sections[section].size();
+            const std::string option_prefix(tree_branch(last_option));
+            const std::string child_prefix = last_option ? "   " : std::string(tree_continuation());
             const std::string label = option.key() == "base:raclist" ? "RACLIST classes" : format_security_key(option.key());
-            ss << "  ";
+            ss << option_prefix;
             append_label(ss, label);
             ss << ":";
             if (section != 5)
@@ -359,13 +397,9 @@ std::string TextFormatter::format(const RacfOptionsData &options)
             ss << "\n";
             for (std::size_t index = 0; index < classes.size(); ++index)
             {
-                if (index % 6 == 0)
-                    ss << "    ";
+                ss << child_prefix << tree_branch(index + 1 == classes.size());
                 append_styled_value(ss, classes[index]);
-                if (index % 6 == 5 || index + 1 == classes.size())
-                    ss << "\n";
-                else
-                    ss << std::string(classes[index].size() < 12 ? 12 - classes[index].size() : 1, ' ');
+                ss << "\n";
             }
         }
     }
@@ -432,69 +466,42 @@ std::string TextFormatter::format(const UserData &user)
     {
         append_label(ss, "Groups:");
         ss << "\n";
-        for (const auto &group : user.groups)
+        for (std::size_t index = 0; index < user.groups.size(); ++index)
         {
-            ss << "  ";
-            append_styled_value(ss, group);
+            ss << tree_branch(index + 1 == user.groups.size());
+            append_styled_value(ss, user.groups[index]);
             ss << "\n";
         }
     }
 
     if (!user.security.is_null() && !user.security.empty())
     {
-        for (auto it = user.security.begin(); it != user.security.end(); ++it)
-        {
-            append_label(ss, format_security_key(it.key()));
-            ss << ": ";
-            append_json_value(ss, it.value());
-            ss << "\n";
-        }
+        append_segment_heading(ss, "Security");
+        append_tree_json(ss, user.security);
     }
 
     if (!user.tso.is_null() && !user.tso.empty())
     {
         append_segment_heading(ss, "TSO");
-        if (user.tso.contains("tso:logon_procedure"))
-            append_field(ss, "  Procedure:    ", user.tso["tso:logon_procedure"]);
-        if (user.tso.contains("tso:account_number"))
-            append_field(ss, "  Account:      ", user.tso["tso:account_number"]);
-        if (user.tso.contains("tso:default_region_size"))
-            append_field(ss, "  Region:       ", user.tso["tso:default_region_size"]);
-        if (user.tso.contains("tso:max_region_size"))
-            append_field(ss, "  Max region:   ", user.tso["tso:max_region_size"]);
-        if (user.tso.contains("tso:dataset_allocation_unit"))
-            append_field(ss, "  Alloc unit:   ", user.tso["tso:dataset_allocation_unit"]);
-        if (user.tso.contains("tso:logon_command"))
-            append_field(ss, "  Logon cmd:    ", user.tso["tso:logon_command"]);
-        if (user.tso.contains("tso:user_data"))
-            append_field(ss, "  User data:    ", user.tso["tso:user_data"]);
+        append_tree_json(ss, user.tso);
     }
 
     if (!user.omvs.is_null() && !user.omvs.empty())
     {
         append_segment_heading(ss, "OMVS");
-        if (user.omvs.contains("omvs:uid"))
-            append_field(ss, "  UID:   ", user.omvs["omvs:uid"]);
-        if (user.omvs.contains("omvs:home_directory"))
-            append_field(ss, "  Home:  ", user.omvs["omvs:home_directory"]);
-        if (user.omvs.contains("omvs:default_shell"))
-            append_field(ss, "  Shell: ", user.omvs["omvs:default_shell"]);
+        append_tree_json(ss, user.omvs);
     }
 
     if (!user.kerberos.is_null() && !user.kerberos.empty())
     {
-        append_segment_label(ss, "Kerberos");
-        ss << " ";
-        append_styled_value(ss, user.kerberos.dump());
-        ss << "\n";
+        append_segment_heading(ss, "Kerberos");
+        append_tree_json(ss, user.kerberos);
     }
 
     if (!user.cics.is_null() && !user.cics.empty())
     {
-        append_segment_label(ss, "CICS");
-        ss << " ";
-        append_styled_value(ss, user.cics.dump());
-        ss << "\n";
+        append_segment_heading(ss, "CICS");
+        append_tree_json(ss, user.cics);
     }
 
     append_csdata(ss, user.csdata);
@@ -523,23 +530,21 @@ std::string TextFormatter::format(const GroupData &group)
     {
         append_label(ss, "Users:");
         ss << "\n";
-        for (const auto &connected_user : group.connected_users)
+        for (std::size_t index = 0; index < group.connected_users.size(); ++index)
         {
-                ss << "  ";
-                append_styled_value(ss, connected_user.userid);
-                ss << " (";
-                append_styled_value(ss, connected_user.authority);
-                ss << ")\n";
+            const auto &connected_user = group.connected_users[index];
+            ss << tree_branch(index + 1 == group.connected_users.size());
+            append_styled_value(ss, connected_user.userid);
+            ss << " (";
+            append_styled_value(ss, connected_user.authority);
+            ss << ")\n";
         }
     }
 
     if (!group.omvs.is_null() && !group.omvs.empty())
     {
         append_segment_heading(ss, "OMVS");
-        if (group.omvs.contains("omvs:gid"))
-        {
-            append_field(ss, "  GID: ", group.omvs["omvs:gid"]);
-        }
+        append_tree_json(ss, group.omvs);
     }
 
     append_csdata(ss, group.csdata);
@@ -633,9 +638,11 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             {
                 racshell::colorize(ss, racshell::terminal_color::heading) << "  Users only in " << comparison.left.groupid << ":\n";
                 racshell::reset_color(ss);
-                for (const auto &user : users["only_in_left"])
+                const auto &left_users = users["only_in_left"];
+                for (std::size_t index = 0; index < left_users.size(); ++index)
                 {
-                    ss << "    ";
+                    const auto &user = left_users[index];
+                    ss << "  " << tree_branch(index + 1 == left_users.size());
                     append_styled_value(ss, user.value("userid", ""));
                     ss << " (";
                     append_styled_value(ss, user.value("authority", ""));
@@ -646,9 +653,11 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             {
                 racshell::colorize(ss, racshell::terminal_color::heading) << "  Users only in " << comparison.right.groupid << ":\n";
                 racshell::reset_color(ss);
-                for (const auto &user : users["only_in_right"])
+                const auto &right_users = users["only_in_right"];
+                for (std::size_t index = 0; index < right_users.size(); ++index)
                 {
-                    ss << "    ";
+                    const auto &user = right_users[index];
+                    ss << "  " << tree_branch(index + 1 == right_users.size());
                     append_styled_value(ss, user.value("userid", ""));
                     ss << " (";
                     append_styled_value(ss, user.value("authority", ""));
@@ -658,19 +667,22 @@ std::string TextFormatter::format(const GroupComparisonData &comparison)
             if (users.contains("authority_mismatches"))
             {
                 racshell::print_colored_text(ss, racshell::terminal_color::gray, "  User authority differences\n");
-                for (const auto &mismatch : users["authority_mismatches"])
+                const auto &mismatches = users["authority_mismatches"];
+                for (std::size_t index = 0; index < mismatches.size(); ++index)
                 {
-                    ss << "    ";
+                    const auto &mismatch = mismatches[index];
+                    const bool last = index + 1 == mismatches.size();
+                    ss << "  " << tree_branch(last);
                     append_styled_value(ss, mismatch.value("userid", ""));
-                    ss << ": ";
+                    ss << ":\n" << (last ? "     " : "  " + std::string(tree_continuation())) << tree_branch(false);
                     racshell::colorize(ss, racshell::terminal_color::value) << comparison.left.groupid;
-                    racshell::reset_color(ss) << "='";
+                    racshell::reset_color(ss) << ": ";
                     append_styled_value(ss, mismatch.value("left", ""));
-                    ss << "', ";
+                    ss << "\n" << (last ? "     " : "  " + std::string(tree_continuation())) << tree_branch(true);
                     racshell::colorize(ss, racshell::terminal_color::value) << comparison.right.groupid;
-                    racshell::reset_color(ss) << "='";
+                    racshell::reset_color(ss) << ": ";
                     append_styled_value(ss, mismatch.value("right", ""));
-                    ss << "'\n";
+                    ss << "\n";
                 }
             }
             continue;
@@ -751,10 +763,11 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             {
                 racshell::colorize(ss, racshell::terminal_color::heading) << "    Groups only in " << comparison.left.userid << ":\n";
                 racshell::reset_color(ss);
-                for (const auto &group : groups["only_in_left"])
+                const auto &left_groups = groups["only_in_left"];
+                for (std::size_t index = 0; index < left_groups.size(); ++index)
                 {
-                    ss << "    ";
-                    append_styled_value(ss, racshell::value_to_text(group));
+                    ss << "    " << tree_branch(index + 1 == left_groups.size());
+                    append_styled_value(ss, racshell::value_to_text(left_groups[index]));
                     ss << "\n";
                 }
             }
@@ -762,10 +775,11 @@ std::string TextFormatter::format(const UserComparisonData &comparison)
             {
                 racshell::colorize(ss, racshell::terminal_color::heading) << "    Groups only in " << comparison.right.userid << ":\n";
                 racshell::reset_color(ss);
-                for (const auto &group : groups["only_in_right"])
+                const auto &right_groups = groups["only_in_right"];
+                for (std::size_t index = 0; index < right_groups.size(); ++index)
                 {
-                    ss << "    ";
-                    append_styled_value(ss, racshell::value_to_text(group));
+                    ss << "    " << tree_branch(index + 1 == right_groups.size());
+                    append_styled_value(ss, racshell::value_to_text(right_groups[index]));
                     ss << "\n";
                 }
             }
