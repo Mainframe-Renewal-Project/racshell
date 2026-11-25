@@ -120,11 +120,10 @@ int main(int argc, char *argv[])
         user_data.security = nlohmann::json::object();
 
         const std::vector<std::string> base_security_keys = {
-            "base:resume_date",
-            "base:password_change_date",
-            "base:password_change_interval",
             "base:passphrase_change_date",
-            "base:passphrase_change_interval"};
+            "base:passphrase_change_interval",
+            "base:password_change_date",
+            "base:password_change_interval"};
 
         for (const auto &key : base_security_keys)
         {
@@ -133,11 +132,6 @@ int main(int argc, char *argv[])
             {
                 user_data.security[key] = *element;
             }
-        }
-
-        if (profile.contains("mfa"))
-        {
-            user_data.security["mfa"] = profile["mfa"];
         }
 
         if (groups && base.contains("base:group_connections"))
