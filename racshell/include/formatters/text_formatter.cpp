@@ -533,7 +533,7 @@ std::string TextFormatter::format(const GroupData &group)
 
     if (!group.connected_users.empty())
     {
-        append_label(ss, "Users:");
+        racshell::print_colored_text(ss, racshell::terminal_color::heading, "Users:");
         ss << "\n";
         for (std::size_t index = 0; index < group.connected_users.size(); ++index)
         {
