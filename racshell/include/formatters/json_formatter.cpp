@@ -3,7 +3,8 @@
 namespace
 {
 
-    void add_if_present(nlohmann::json &output,
+    template <typename JsonType>
+    void add_if_present(JsonType &output,
                         const nlohmann::json &value,
                         const char *key)
     {
@@ -40,7 +41,7 @@ std::string JsonFormatter::format(const RacfOptionsData &options)
 
 std::string JsonFormatter::format(const UserData &user)
 {
-    nlohmann::json output;
+    nlohmann::ordered_json output;
 
     output["userid"] = user.userid;
     output["name"] = user.name;
