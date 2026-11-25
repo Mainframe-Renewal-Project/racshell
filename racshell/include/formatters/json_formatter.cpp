@@ -72,7 +72,16 @@ std::string JsonFormatter::format(const UserData &user)
         output["groups"] = user.groups;
     }
 
-    add_if_present(output, user.security, "security");
+    if (user.security.is_object())
+    {
+        for (const auto &field : user.security.items())
+        {
+            const std::string key = field.key().rfind("base:", 0) == 0
+                                        ? field.key().substr(5)
+                                        : field.key();
+            output[key] = field.value();
+        }
+    }
     add_if_present(output, user.tso, "tso");
     add_if_present(output, user.omvs, "omvs");
     add_if_present(output, user.kerberos, "kerberos");

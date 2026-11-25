@@ -462,6 +462,11 @@ std::string TextFormatter::format(const UserData &user)
     append_boolean(ss, user.mfa_active);
     ss << "\n";
 
+    if (!user.security.is_null() && !user.security.empty())
+    {
+        append_tree_json(ss, user.security);
+    }
+
     if (!user.groups.empty())
     {
         append_label(ss, "Groups:");
@@ -472,12 +477,6 @@ std::string TextFormatter::format(const UserData &user)
             append_styled_value(ss, user.groups[index]);
             ss << "\n";
         }
-    }
-
-    if (!user.security.is_null() && !user.security.empty())
-    {
-        append_segment_heading(ss, "Security");
-        append_tree_json(ss, user.security);
     }
 
     if (!user.tso.is_null() && !user.tso.empty())
