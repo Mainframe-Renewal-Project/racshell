@@ -137,6 +137,8 @@ int main(int argc, char *argv[])
     }
     else
     {
+        racshell::print_colored_text(std::cout, racshell::terminal_color::cyan, "RACF keyring");
+        std::cout << "\n\n";
         std::cout << "Owner: " << owner << "\n";
         std::cout << "Keyring: " << keyring << "\n";
 

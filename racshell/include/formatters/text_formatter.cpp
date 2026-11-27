@@ -46,6 +46,13 @@ namespace
         racshell::print_colored_text(ss, racshell::terminal_color::text, label);
     }
 
+    void append_boolean_field(std::stringstream &ss, std::string_view label, bool value)
+    {
+        append_label(ss, label);
+        append_boolean(ss, value);
+        ss << "\n";
+    }
+
     template <typename T>
     void append_styled_value(std::stringstream &ss, const T &value)
     {
@@ -182,6 +189,12 @@ namespace
         ss << "\n";
     }
 
+    void append_main_heading(std::stringstream &ss, std::string_view heading)
+    {
+        racshell::print_colored_text(ss, racshell::terminal_color::cyan, heading);
+        ss << "\n\n";
+    }
+
     void append_csdata(std::stringstream &ss, const nlohmann::json &csdata)
     {
         if (!csdata.is_null() && !csdata.empty())
@@ -201,12 +214,19 @@ namespace
             {
                 const auto &entry = access_list[index];
                 ss << tree_branch(index + 1 == access_list.size());
-                append_styled_value(ss, entry.access_type);
                 if (!entry.access_id.empty())
                 {
-                    ss << " (";
                     append_styled_value(ss, entry.access_id);
-                    ss << ")";
+                    if (!entry.access_type.empty())
+                    {
+                        ss << " [";
+                        append_styled_value(ss, entry.access_type);
+                        ss << "]";
+                    }
+                }
+                else
+                {
+                    append_styled_value(ss, entry.access_type);
                 }
                 ss << "\n";
             }
@@ -283,8 +303,7 @@ namespace
 std::string TextFormatter::format(const RrsfData &rrsf)
 {
     std::stringstream ss;
-    racshell::print_colored_text(ss, racshell::terminal_color::cyan, "RRSF configuration");
-    ss << "\n";
+    append_main_heading(ss, "RRSF configuration");
     const auto &base = rrsf.profile.at("base");
     for (const auto &field : base.items())
     {
@@ -318,8 +337,7 @@ std::string TextFormatter::format(const RrsfData &rrsf)
 std::string TextFormatter::format(const RacfOptionsData &options)
 {
     std::stringstream ss;
-    racshell::print_colored_text(ss, racshell::terminal_color::cyan, "RACF system options");
-    ss << "\n";
+    append_main_heading(ss, "RACF system options");
     const std::array<std::string, 6> headings = {
         "General", "Password policy", "Auditing", "Security labels", "JES", "Classes"};
     std::array<nlohmann::json, 6> sections;
@@ -410,6 +428,7 @@ std::string TextFormatter::format(const UserData &user)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF user");
     append_field(ss, "User: ", user.userid);
     append_field(ss, "Name: ", user.name);
     append_field(ss, "Installation data: ", user.installation_data);
@@ -418,49 +437,42 @@ std::string TextFormatter::format(const UserData &user)
     append_field(ss, "Created: ", user.created_date);
     append_field(ss, "Last access date: ", user.last_access_date);
     append_field(ss, "Last access time: ", user.last_access_time);
-    append_label(ss, "Protected: ");
-    append_boolean(ss, user.protected_user);
-    ss << "\n";
-    append_label(ss, "Restricted: ");
-    append_boolean(ss, user.restrict_global_access_checking);
-    ss << "\n";
-    append_label(ss, "Special: ");
-    append_boolean(ss, user.special);
-    ss << "\n";
-    append_label(ss, "Operations: ");
-    append_boolean(ss, user.operations);
-    ss << "\n";
-    append_label(ss, "Auditor: ");
-    append_boolean(ss, user.auditor);
-    ss << "\n";
-    append_label(ss, "Read-only auditor: ");
-    append_boolean(ss, user.read_only_auditor);
-    ss << "\n";
-    append_label(ss, "Revoked: ");
-    append_boolean(ss, user.revoked);
-    ss << "\n";
+    append_boolean_field(ss, "Protected: ", user.protected_user);
+    append_boolean_field(ss, "Restricted: ", user.restrict_global_access_checking);
+    append_boolean_field(ss, "Special: ", user.special);
+    append_boolean_field(ss, "Operations: ", user.operations);
+    append_boolean_field(ss, "Auditor: ", user.auditor);
+    append_boolean_field(ss, "Read-only auditor: ", user.read_only_auditor);
+    append_boolean_field(ss, "Revoked: ", user.revoked);
     if (!user.revoke_date.empty())
     {
         append_field(ss, "Revoke date: ", user.revoke_date);
     }
     if (user.contained.has_value())
     {
-        append_label(ss, "Contained: ");
-        append_boolean(ss, *user.contained);
-        ss << "\n";
+        append_boolean_field(ss, "Contained: ", *user.contained);
     }
-    append_label(ss, "Password expired: ");
-    append_boolean(ss, user.password_expired);
-    ss << "\n";
-    append_label(ss, "Has passphrase: ");
-    append_boolean(ss, user.has_passphrase);
-    ss << "\n";
-    append_label(ss, "Has password: ");
-    append_boolean(ss, user.has_password);
-    ss << "\n";
-    append_label(ss, "MFA active: ");
-    append_boolean(ss, user.mfa_active);
-    ss << "\n";
+    append_boolean_field(ss, "Password expired: ", user.password_expired);
+    append_boolean_field(ss, "Has passphrase: ", user.has_passphrase);
+    append_boolean_field(ss, "Has password: ", user.has_password);
+    append_boolean_field(ss, "MFA active: ", user.mfa_active);
+
+    if (user.passphrase_change_date.has_value())
+    {
+        append_field(ss, "Passphrase change date: ", *user.passphrase_change_date);
+    }
+    if (user.passphrase_change_interval.has_value())
+    {
+        append_field(ss, "Passphrase change interval: ", *user.passphrase_change_interval);
+    }
+    if (user.password_change_date.has_value())
+    {
+        append_field(ss, "Password change date: ", *user.password_change_date);
+    }
+    if (user.password_change_interval.has_value())
+    {
+        append_field(ss, "Password change interval: ", *user.password_change_interval);
+    }
 
     if (!user.groups.empty())
     {
@@ -472,12 +484,6 @@ std::string TextFormatter::format(const UserData &user)
             append_styled_value(ss, user.groups[index]);
             ss << "\n";
         }
-    }
-
-    if (!user.security.is_null() && !user.security.empty())
-    {
-        append_segment_heading(ss, "Security");
-        append_tree_json(ss, user.security);
     }
 
     if (!user.tso.is_null() && !user.tso.empty())
@@ -513,13 +519,12 @@ std::string TextFormatter::format(const GroupData &group)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF group");
     append_field(ss, "Group: ", group.groupid);
     append_field(ss, "Owner: ", group.owner);
     append_field(ss, "Created: ", group.created_date);
     append_field(ss, "Superior group: ", group.superior_group);
-    append_label(ss, "Universal: ");
-    append_boolean(ss, group.universal);
-    ss << "\n";
+    append_boolean_field(ss, "Universal: ", group.universal);
 
     if (!group.installation_data.empty())
     {
@@ -528,16 +533,16 @@ std::string TextFormatter::format(const GroupData &group)
 
     if (!group.connected_users.empty())
     {
-        append_label(ss, "Users:");
+        racshell::print_colored_text(ss, racshell::terminal_color::heading, "Users:");
         ss << "\n";
         for (std::size_t index = 0; index < group.connected_users.size(); ++index)
         {
             const auto &connected_user = group.connected_users[index];
             ss << tree_branch(index + 1 == group.connected_users.size());
             append_styled_value(ss, connected_user.userid);
-            ss << " (";
+            ss << " [";
             append_styled_value(ss, connected_user.authority);
-            ss << ")\n";
+            ss << "]\n";
         }
     }
 
@@ -556,12 +561,11 @@ std::string TextFormatter::format(const DatasetData &dataset)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF dataset");
     append_field(ss, "Dataset: ", dataset.dataset);
     append_field(ss, "Owner: ", dataset.owner);
     append_field(ss, "UACC: ", dataset.uacc);
-    append_label(ss, "Audited: ");
-    append_boolean(ss, dataset.audited);
-    ss << "\n";
+    append_boolean_field(ss, "Audited: ", dataset.audited);
 
     if (dataset.access_count > 0)
     {
@@ -579,6 +583,7 @@ std::string TextFormatter::format(const ResourceData &resource)
 {
     std::stringstream ss;
 
+    append_main_heading(ss, "RACF resource");
     append_field(ss, "Resource: ", resource.resource);
     append_field(ss, "Class: ", resource.resource_class);
     append_field(ss, "Owner: ", resource.owner);

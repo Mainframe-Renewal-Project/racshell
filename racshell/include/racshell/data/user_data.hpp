@@ -29,8 +29,11 @@ struct UserData
     bool has_passphrase = false;
     bool has_password = false;
     bool mfa_active = false;
+    std::optional<std::string> passphrase_change_date;
+    std::optional<int> passphrase_change_interval;
+    std::optional<std::string> password_change_date;
+    std::optional<int> password_change_interval;
     std::vector<std::string> groups;
-    nlohmann::json security;
     nlohmann::json tso;
     nlohmann::json omvs;
     nlohmann::json kerberos;

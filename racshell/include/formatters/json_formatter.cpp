@@ -3,7 +3,8 @@
 namespace
 {
 
-    void add_if_present(nlohmann::json &output,
+    template <typename JsonType>
+    void add_if_present(JsonType &output,
                         const nlohmann::json &value,
                         const char *key)
     {
@@ -40,7 +41,7 @@ std::string JsonFormatter::format(const RacfOptionsData &options)
 
 std::string JsonFormatter::format(const UserData &user)
 {
-    nlohmann::json output;
+    nlohmann::ordered_json output;
 
     output["userid"] = user.userid;
     output["name"] = user.name;
@@ -66,13 +67,28 @@ std::string JsonFormatter::format(const UserData &user)
     output["has_passphrase"] = user.has_passphrase;
     output["has_password"] = user.has_password;
     output["mfa_active"] = user.mfa_active;
+    if (user.passphrase_change_date.has_value())
+    {
+        output["passphrase_change_date"] = *user.passphrase_change_date;
+    }
+    if (user.passphrase_change_interval.has_value())
+    {
+        output["passphrase_change_interval"] = *user.passphrase_change_interval;
+    }
+    if (user.password_change_date.has_value())
+    {
+        output["password_change_date"] = *user.password_change_date;
+    }
+    if (user.password_change_interval.has_value())
+    {
+        output["password_change_interval"] = *user.password_change_interval;
+    }
 
     if (!user.groups.empty())
     {
         output["groups"] = user.groups;
     }
 
-    add_if_present(output, user.security, "security");
     add_if_present(output, user.tso, "tso");
     add_if_present(output, user.omvs, "omvs");
     add_if_present(output, user.kerberos, "kerberos");
@@ -120,16 +136,6 @@ std::string JsonFormatter::format(const DatasetData &dataset)
     output["audited"] = dataset.audited;
     output["access_count"] = dataset.access_count;
 
-    if (!dataset.access_list.empty())
-    {
-        nlohmann::json access_array = nlohmann::json::array();
-        for (const auto &entry : dataset.access_list)
-        {
-            access_array.push_back({{"access_type", entry.access_type}, {"access_id", entry.access_id}});
-        }
-        output["access_list"] = access_array;
-    }
-
     add_if_present(output, dataset.csdata, "csdata");
     add_access_list_to_json(output, dataset.access_list);
 
@@ -144,16 +150,6 @@ std::string JsonFormatter::format(const ResourceData &resource)
     output["class"] = resource.resource_class;
     output["owner"] = resource.owner;
     output["universal_access"] = resource.uacc;
-
-    if (!resource.access_list.empty())
-    {
-        nlohmann::json access_array = nlohmann::json::array();
-        for (const auto &entry : resource.access_list)
-        {
-            access_array.push_back({{"access_type", entry.access_type}, {"access_id", entry.access_id}});
-        }
-        output["access_list"] = access_array;
-    }
 
     add_if_present(output, resource.csdata, "csdata");
     add_access_list_to_json(output, resource.access_list);
